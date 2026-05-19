@@ -114,7 +114,7 @@ ASPNETCORE_URLS=http://127.0.0.1:5088
 - Basic Auth 适合作为轻量访问门禁，不建议裸露在公网 HTTP 下使用。
 - 外网可访问时，请务必放在 HTTPS 或内网 VPN 后面。
 - 生产环境优先使用 `PasswordSha256`，不要把明文密码提交到仓库。
-- 连续失败会触发短时间锁定，默认同一客户端 IP 失败 5 次后锁定 300 秒。
+- 连续错误凭据会触发短时间锁定，默认同一客户端 IP 失败 5 次后锁定 300 秒；匿名访问只会收到 `401` 质询，不会消耗锁定次数。
 - 如果部署在 nginx 后面，请正确转发 `X-Forwarded-For`，否则失败锁定只能看到代理 IP。
 
 ## nginx 配置
@@ -151,6 +151,8 @@ server {
 - Environment: `production`
 
 普通 push 和 PR 只运行构建测试。发布版本时创建 `v*` tag 或手动触发 GitHub Actions，工作流会进入 `production` 环境并使用 NuGet OIDC 短期凭据发布包。
+
+注意：`NuGet/login@v1` 的 `user` 参数需要填写 Trusted Publishing 策略创建者账号。当前仓库应填写 `ppengit`，而不是包 owner `pp_nuget`。
 
 ## 本地开发
 

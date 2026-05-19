@@ -41,7 +41,14 @@ internal sealed class JLogDashboardBasicAuthGuard
                 return BasicAuthDecision.LockedOut(state.LockedUntil.Value - now);
             }
 
-            if (!TryReadCredentials(context.Request.Headers.Authorization, out var username, out var password)
+            var credentialsState = ReadCredentials(context.Request.Headers.Authorization, out var username, out var password);
+            if (credentialsState == BasicAuthCredentialsState.Missing)
+            {
+                // Missing credentials should challenge the client, but not poison the lockout counter.
+                return BasicAuthDecision.Challenge;
+            }
+
+            if (credentialsState == BasicAuthCredentialsState.Invalid
                 || !CredentialsMatch(options.BasicAuth, username, password))
             {
                 return Reject(state, now, options.BasicAuth);
@@ -65,15 +72,23 @@ internal sealed class JLogDashboardBasicAuthGuard
         return BasicAuthDecision.Challenge;
     }
 
-    private static bool TryReadCredentials(StringValues authorization, out string username, out string password)
+    private static BasicAuthCredentialsState ReadCredentials(
+        StringValues authorization,
+        out string username,
+        out string password)
     {
         username = string.Empty;
         password = string.Empty;
 
         var header = authorization.ToString();
-        if (string.IsNullOrWhiteSpace(header) || !header.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(header))
         {
-            return false;
+            return BasicAuthCredentialsState.Missing;
+        }
+
+        if (!header.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+        {
+            return BasicAuthCredentialsState.Invalid;
         }
 
         string decoded;
@@ -84,18 +99,18 @@ internal sealed class JLogDashboardBasicAuthGuard
         }
         catch (FormatException)
         {
-            return false;
+            return BasicAuthCredentialsState.Invalid;
         }
 
         var separator = decoded.IndexOf(':', StringComparison.Ordinal);
         if (separator <= 0)
         {
-            return false;
+            return BasicAuthCredentialsState.Invalid;
         }
 
         username = decoded[..separator];
         password = decoded[(separator + 1)..];
-        return true;
+        return BasicAuthCredentialsState.Valid;
     }
 
     private static bool CredentialsMatch(BasicAuthOptions options, string username, string password)
@@ -136,5 +151,12 @@ internal sealed class JLogDashboardBasicAuthGuard
         }
 
         return context.Connection.RemoteIpAddress?.ToString() ?? IPAddress.Loopback.ToString();
+    }
+
+    private enum BasicAuthCredentialsState
+    {
+        Missing,
+        Invalid,
+        Valid
     }
 }

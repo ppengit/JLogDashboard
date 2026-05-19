@@ -177,6 +177,36 @@ public sealed class AspNetCoreDashboardTests
     }
 
     [Fact]
+    public async Task BasicAuth_DoesNotLockClientAfterAnonymousChallenges()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(workspace, options =>
+        {
+            options.BasicAuth.Enabled = true;
+            options.BasicAuth.Username = "ops";
+            options.BasicAuth.Password = "secret";
+            options.BasicAuth.MaxFailedAttempts = 2;
+            options.BasicAuth.LockoutSeconds = 60;
+        });
+
+        var anonymousRequest1 = new HttpRequestMessage(HttpMethod.Get, "/ops-logs");
+        anonymousRequest1.Headers.Add("X-Forwarded-For", "203.0.113.20");
+        var anonymousRequest2 = new HttpRequestMessage(HttpMethod.Get, "/ops-logs");
+        anonymousRequest2.Headers.Add("X-Forwarded-For", "203.0.113.20");
+        var validRequest = new HttpRequestMessage(HttpMethod.Get, "/ops-logs");
+        validRequest.Headers.Add("X-Forwarded-For", "203.0.113.20");
+        validRequest.Headers.Authorization = CreateBasicAuthHeader("ops", "secret");
+
+        var first = await client.SendAsync(anonymousRequest1);
+        var second = await client.SendAsync(anonymousRequest2);
+        var valid = await client.SendAsync(validRequest);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, second.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, valid.StatusCode);
+    }
+
+    [Fact]
     public async Task BasicAuth_LocksClientAfterRepeatedFailures()
     {
         using var workspace = new TemporaryLogWorkspace();

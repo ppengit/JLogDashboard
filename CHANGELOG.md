@@ -1,5 +1,10 @@
 # 更新日志
 
+## 0.1.1
+
+- 修复 NuGet Trusted Publishing 登录用户名，改为策略创建者 `ppengit`。
+- 调整 Basic Auth 锁定策略，匿名访问只返回 `401`，错误凭据才累计失败次数。
+
 ## 0.1.0
 
 - 初始化 JLogDashboard 项目结构。
