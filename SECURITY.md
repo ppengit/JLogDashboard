@@ -1,29 +1,32 @@
-# 安全策略
+# Security Policy
 
-JLogDashboard 用于查看日志文件，日志中可能包含异常堆栈、机器路径、请求参数或业务标识。请按内部工具对待，不要在没有访问控制的情况下暴露到公网。
+JLogDashboard is an operational tool for viewing application log files. Those logs may contain stack traces, machine paths, request parameters, identifiers, or other sensitive information. Treat the dashboard as an internal operations surface, not as a public-facing product endpoint.
 
-## 支持版本
+## Supported Versions
 
-当前项目处于 `0.x` 初始阶段，只维护最新版本。
+The project is currently in the `0.x` phase. Security fixes are provided for the latest published version only.
 
-## 报告安全问题
+## Reporting A Vulnerability
 
-请不要在公开 Issue 中披露安全漏洞细节。可以通过以下方式联系维护者：
+Please do not disclose vulnerability details in a public GitHub issue.
 
-- 邮箱：peng.it@qq.com
-- GitHub 仓库：https://github.com/ppengit/JLogDashboard
+Report security concerns through one of the following channels:
 
-报告时建议包含：
+- Email: `peng.it@qq.com`
+- GitHub repository: https://github.com/ppengit/JLogDashboard
 
-- 受影响版本或 commit；
-- 复现步骤；
-- 影响范围；
-- 临时缓解建议（如有）。
+When reporting, include:
 
-## 部署建议
+- affected version or commit;
+- reproduction steps;
+- impact assessment;
+- any suggested mitigation, if available.
 
-- 生产环境开启 `BasicAuth.Enabled`。
-- 优先使用 `PasswordSha256`，避免提交明文密码。
-- 使用 HTTPS、内网、VPN 或可信反向代理暴露 Dashboard。
-- nginx 后面部署时，请转发 `X-Forwarded-For`，否则失败锁定只能识别代理 IP。
-- 不要把日志目录配置到包含敏感配置文件的上级目录。
+## Deployment Recommendations
+
+- Enable `BasicAuth.Enabled` in non-local environments.
+- Prefer `PasswordSha256` over plain-text passwords.
+- Expose the dashboard through HTTPS, VPN, or a trusted internal reverse proxy.
+- Forward `X-Forwarded-For` when deployed behind nginx or another proxy so lockout behavior applies to the actual client.
+- Restrict configured log directories to the intended log root instead of broad parent folders.
+- Treat log access permissions on the host machine as part of the dashboard security boundary.

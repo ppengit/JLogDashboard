@@ -1,20 +1,21 @@
-# 更新日志
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+## 0.1.3
+
+- Refined the public documentation structure for GitHub and NuGet presentation.
+- Improved repository collaboration materials, including issue and pull request templates.
+- Clarified maintainer release guidance for GitHub Actions and NuGet Trusted Publishing.
 
 ## 0.1.2
 
-- 修正 NuGet Trusted Publishing 登录用户名为策略创建者 `penjay`。
-- 保留 Basic Auth 匿名访问不计入锁定次数的行为修正。
-
-## 0.1.1
-
-- 修复 NuGet Trusted Publishing 登录用户名，改为策略创建者 `ppengit`。
-- 调整 Basic Auth 锁定策略，匿名访问只返回 `401`，错误凭据才累计失败次数。
+- Fixed NuGet Trusted Publishing configuration and successfully published the package.
+- Updated Basic Auth lockout behavior so anonymous requests return `401` without consuming lockout attempts.
 
 ## 0.1.0
 
-- 初始化 JLogDashboard 项目结构。
-- 添加 NLog、log4net、Serilog 文件日志解析。
-- 添加多项目日志目录配置、筛选查询和大文件尾部读取。
-- 添加 ASP.NET Core Dashboard、查询 API、项目 API 和 nginx 配置生成 API。
-- 添加 Basic Auth 与失败次数锁定。
-- 添加独立 Host、NuGet 元数据和 GitHub Actions Trusted Publishing 工作流。
+- Initial public release of JLogDashboard.
+- Added file-log parsing support for NLog, log4net, and Serilog.
+- Added multi-project configuration, filtering, large-file tail reading, and exception stack grouping.
+- Added ASP.NET Core Dashboard integration, standalone host, Basic Auth, and nginx configuration generation.

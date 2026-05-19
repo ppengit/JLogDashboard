@@ -1,26 +1,29 @@
-## 变更说明
+## Summary
 
-<!-- 简要说明这次改动解决了什么问题。 -->
+Describe the purpose of this change and the user or operational problem it addresses.
 
-## 变更类型
+## Change Type
 
-- [ ] 新功能
-- [ ] Bug 修复
-- [ ] 文档更新
-- [ ] 重构
-- [ ] CI / 发布配置
+- [ ] Feature
+- [ ] Bug fix
+- [ ] Documentation
+- [ ] Refactor
+- [ ] Test improvement
+- [ ] CI / release
 
-## 测试情况
+## Validation
 
-- [ ] 已运行 `dotnet test JLogDashboard.sln`
-- [ ] 已覆盖新增或变更的行为
-- [ ] 如涉及 UI，已手动打开 Dashboard 检查
+- [ ] Ran `dotnet build JLogDashboard.sln --configuration Release`
+- [ ] Ran `dotnet test JLogDashboard.sln --configuration Release`
+- [ ] Added or updated tests for behavior changes
+- [ ] Manually checked the Dashboard when UI behavior changed
 
-## 安全影响
+## Security And Operations Impact
 
-- [ ] 不影响认证和访问控制
-- [ ] 涉及认证、授权或日志敏感信息处理
+- [ ] No change to authentication, authorization, or sensitive log handling
+- [ ] This change affects authentication, authorization, or sensitive log handling
+- [ ] This change affects deployment, configuration, or release behavior
 
-## 其他说明
+## Notes
 
-<!-- 兼容性、部署注意事项、截图等。 -->
+Include compatibility notes, rollout considerations, screenshots, or sample configuration if needed.
