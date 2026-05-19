@@ -47,6 +47,8 @@ Typical access path:
 https://your-domain/jlog
 ```
 
+Repository sample: [`samples/JLogDashboard.SampleWeb`](https://github.com/ppengit/JLogDashboard/tree/main/samples/JLogDashboard.SampleWeb) (`admin` / `sample-password`)
+
 ## Standalone Host Deployment
 
 The repository contains `src/JLogDashboard.Host`, which is useful when you want to run the dashboard separately from your business applications.
@@ -137,3 +139,4 @@ server {
 - Large files are read from the tail window defined by `MaxFileBytes`.
 - The dashboard is intended for inspection and troubleshooting, not for centralized long-term analytics.
 - Common dashboard runtime faults are isolated to the dashboard route so unrelated host endpoints can continue serving requests.
+- Fatal dashboard misconfiguration is also isolated to the dashboard route. Operators should treat startup error logs as a blocked dashboard, not as a host crash.

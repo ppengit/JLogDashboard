@@ -282,11 +282,60 @@ public sealed class AspNetCoreDashboardTests
         Assert.Contains("JLogDashboard request failed.", text);
     }
 
+    [Fact]
+    public async Task DashboardMisconfiguration_ReturnsControlled503WithoutBreakingNonDashboardEndpoints()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(
+            workspace,
+            options =>
+            {
+                options.BasicAuth.Enabled = true;
+                options.BasicAuth.Username = "ops";
+                options.BasicAuth.PasswordSha256 = "invalid-hash";
+            },
+            configureEndpoints: endpoints => endpoints.MapGet("/health", () => Results.Ok(new { status = "ok" })));
+
+        var dashboardResponse = await client.GetAsync("/ops-logs");
+        var healthResponse = await client.GetAsync("/health");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, dashboardResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
+        Assert.Contains("ok", await healthResponse.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task StartupDiagnostics_LogsWarningsAndErrorsOnce()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var sink = new List<string>();
+        using var client = CreateClient(
+            workspace,
+            options =>
+            {
+                options.BasicAuth.Enabled = false;
+                options.Projects.Clear();
+            },
+            configureLogging: logging => logging.Services.AddSingleton<Microsoft.Extensions.Logging.ILoggerProvider>(
+                new TestLoggerProvider(sink)));
+
+        // Trigger host startup and dashboard route resolution.
+        _ = await client.GetAsync("/ops-logs");
+
+        Assert.Contains(
+            sink,
+            entry => entry.Contains("configuration error", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            sink,
+            entry => entry.Contains("BasicAuth", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static HttpClient CreateClient(
         TemporaryLogWorkspace workspace,
         Action<JLogDashboardOptions>? configure = null,
         Action<IServiceCollection>? configureServices = null,
-        Action<IEndpointRouteBuilder>? configureEndpoints = null)
+        Action<IEndpointRouteBuilder>? configureEndpoints = null,
+        Action<Microsoft.Extensions.Logging.ILoggingBuilder>? configureLogging = null)
     {
         var builder = new WebHostBuilder()
             .ConfigureServices(services =>
@@ -305,6 +354,7 @@ public sealed class AspNetCoreDashboardTests
                 });
                 configureServices?.Invoke(services);
             })
+            .ConfigureLogging(logging => configureLogging?.Invoke(logging))
             .Configure(app =>
             {
                 app.UseRouting();
@@ -331,6 +381,57 @@ public sealed class AspNetCoreDashboardTests
     {
         public Task<LogQueryResult> SearchAsync(LogQuery query, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException("simulated dashboard failure");
+    }
+
+    private sealed class TestLoggerProvider : Microsoft.Extensions.Logging.ILoggerProvider
+    {
+        private readonly List<string> _sink;
+
+        public TestLoggerProvider(List<string> sink)
+        {
+            _sink = sink;
+        }
+
+        public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName) => new TestLogger(_sink, categoryName);
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private sealed class TestLogger : Microsoft.Extensions.Logging.ILogger
+    {
+        private readonly List<string> _sink;
+        private readonly string _categoryName;
+
+        public TestLogger(List<string> sink, string categoryName)
+        {
+            _sink = sink;
+            _categoryName = categoryName;
+        }
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+
+        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            Microsoft.Extensions.Logging.LogLevel logLevel,
+            Microsoft.Extensions.Logging.EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            _sink.Add($"{logLevel}|{_categoryName}|{formatter(state, exception)}");
+        }
+    }
+
+    private sealed class NullScope : IDisposable
+    {
+        public static NullScope Instance { get; } = new();
+
+        public void Dispose()
+        {
+        }
     }
 
     private sealed class TemporaryLogWorkspace : IDisposable

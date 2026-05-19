@@ -85,6 +85,8 @@ app.Run();
 
 Open `https://your-domain/jlog`.
 
+Runnable repository sample: [`samples/JLogDashboard.SampleWeb`](https://github.com/ppengit/JLogDashboard/tree/main/samples/JLogDashboard.SampleWeb) (`admin` / `sample-password`)
+
 ### Option 2: Run the standalone host
 
 The repository includes `src/JLogDashboard.Host` for teams that want to expose the dashboard on a dedicated port or behind a reverse proxy.
@@ -127,6 +129,7 @@ For a production-style sample, see [examples/appsettings.sample.json](https://gi
 
 - Use HTTPS, VPN, or a trusted internal reverse proxy when the dashboard is reachable outside a private network.
 - Prefer `PasswordSha256` over plain-text passwords in any shared environment.
+- Startup diagnostics classify configuration issues into warnings and fatal errors. Fatal dashboard misconfiguration blocks dashboard requests with controlled `503` responses without crashing the host application.
 - Anonymous requests return `401` challenges and do not consume lockout attempts.
 - Repeated invalid credentials trigger a temporary lockout for the same client IP.
 - When deployed behind nginx or another reverse proxy, forward `X-Forwarded-For` so the lockout mechanism can identify the actual client.

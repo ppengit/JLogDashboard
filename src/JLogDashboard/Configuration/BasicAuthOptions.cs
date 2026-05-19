@@ -26,4 +26,15 @@ public sealed class BasicAuthOptions
 
     /// <summary>The lockout duration in seconds after too many failed attempts.</summary>
     public int LockoutSeconds { get; set; } = 300;
+
+    /// <summary>Returns whether <see cref="PasswordSha256"/> looks like a full SHA-256 hex string.</summary>
+    public bool IsPasswordSha256Hex()
+    {
+        if (string.IsNullOrWhiteSpace(PasswordSha256) || PasswordSha256.Length != 64)
+        {
+            return false;
+        }
+
+        return PasswordSha256.All(static character => Uri.IsHexDigit(character));
+    }
 }

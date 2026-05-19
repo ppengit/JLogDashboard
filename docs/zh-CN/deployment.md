@@ -47,6 +47,8 @@ app.Run();
 https://your-domain/jlog
 ```
 
+仓库内示例：[`samples/JLogDashboard.SampleWeb`](https://github.com/ppengit/JLogDashboard/tree/main/samples/JLogDashboard.SampleWeb)（账号 `admin`，密码 `sample-password`）
+
 ## 独立宿主部署
 
 仓库中包含 `src/JLogDashboard.Host`，适合将日志看板与业务应用分开运行。
@@ -137,3 +139,4 @@ server {
 - 大文件只会读取由 `MaxFileBytes` 控制的尾部窗口。
 - 它的目标是快速查看和排障，不是集中式长期分析平台。
 - 常见的 Dashboard 运行时故障会被限制在看板路由内部，不应影响宿主应用的其他业务接口继续提供服务。
+- fatal 级别的 Dashboard 配置错误也会被限制在看板路由内部。运维上应将启动期 error 日志理解为“Dashboard 被阻断”，而不是“宿主应用已崩溃”。

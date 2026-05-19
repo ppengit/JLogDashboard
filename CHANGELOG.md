@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.1.7
+
+- Added configuration severity analysis so JLogDashboard can distinguish fatal misconfiguration from advisory operational warnings.
+- Added startup diagnostics that log Dashboard configuration errors and warnings once during host startup.
+- Added dashboard misconfiguration isolation so fatal configuration errors return controlled `503` responses without breaking unrelated host endpoints.
+- Added a runnable embedded sample project under `samples/JLogDashboard.SampleWeb`.
+- Updated English and Chinese README / deployment / configuration docs to document sample usage and configuration-hardening behavior.
+
 ## 0.1.6
 
 - Extended dashboard fault isolation so failures during handler-level service resolution are also contained within the dashboard route.

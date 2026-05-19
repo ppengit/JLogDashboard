@@ -85,6 +85,8 @@ app.Run();
 
 访问 `https://your-domain/jlog`。
 
+仓库内可直接运行的嵌入式示例：[`samples/JLogDashboard.SampleWeb`](https://github.com/ppengit/JLogDashboard/tree/main/samples/JLogDashboard.SampleWeb)（账号 `admin`，密码 `sample-password`）
+
 ### 方式 2：使用独立宿主运行
 
 仓库内提供了 `src/JLogDashboard.Host`，适合需要单独开放端口或放在反向代理后的场景。
@@ -126,6 +128,7 @@ ASPNETCORE_URLS=http://0.0.0.0:5099 dotnet run --project src/JLogDashboard.Host
 
 - 当看板可能被私网外访问时，应配合 HTTPS、VPN 或可信反向代理使用。
 - 在共享环境中优先使用 `PasswordSha256`，不要长期保留明文密码。
+- 启动期诊断会将配置问题区分为 warning 和 fatal error。fatal 级别误配只会阻断 Dashboard 自身，并返回受控 `503`，不会让宿主应用崩掉。
 - 匿名请求会返回 `401` 质询，但不会消耗锁定次数。
 - 同一客户端的重复错误凭据会触发临时锁定。
 - 部署在 nginx 或其他反向代理之后时，需正确转发 `X-Forwarded-For`，让锁定机制识别真实客户端。

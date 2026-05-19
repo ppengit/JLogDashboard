@@ -207,11 +207,25 @@ http://127.0.0.1:5099/jlog
 
 ## 校验规则
 
-启动时，宿主可能会输出以下配置告警：
+启动时，JLogDashboard 会把配置问题区分为 warning 和 fatal error。
+
+fatal error 会让 Dashboard 请求返回受控 `503`，但不会导致宿主进程启动失败。warning 不会阻断 Dashboard，只是为了尽早提示高风险配置。
+
+fatal error 包括：
 
 - 未配置任何项目；
 - 页大小限制无效；
 - `MaxFileBytes` 非法；
 - 启用 Basic Auth 但未提供凭据；
-- 仍在使用默认密码 `change-me`；
+- `PasswordSha256` 格式非法；
 - 项目名称重复。
+
+warning 可能包括：
+
+- 仍在使用默认密码 `change-me`；
+- 仍使用明文 Basic Auth 密码；
+- Basic Auth 已关闭；
+- `Provider` 使用了非内置值；
+- 启动时日志目录不存在；
+- `FileSearchPattern` 为空；
+- 使用了非内置界面文化。

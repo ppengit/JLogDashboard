@@ -207,11 +207,25 @@ http://127.0.0.1:5099/jlog
 
 ## Validation Rules
 
-At startup, the host can report configuration warnings for:
+At startup, JLogDashboard reports configuration issues as either warnings or fatal errors.
+
+Fatal errors block Dashboard requests with controlled `503` responses, but they do not crash the host process. Warnings do not block the Dashboard and are intended to help operators catch risky configuration before external exposure.
+
+Fatal errors include:
 
 - missing projects;
 - invalid page-size limits;
 - invalid `MaxFileBytes`;
 - missing Basic Auth credentials when auth is enabled;
-- default password `change-me`;
+- invalid `PasswordSha256` format;
 - duplicate project names.
+
+Warnings can include:
+
+- default password `change-me`;
+- plain-text Basic Auth password usage;
+- Basic Auth disabled;
+- unknown `Provider` values;
+- missing project directories at startup;
+- empty `FileSearchPattern`;
+- non-built-in UI culture values.

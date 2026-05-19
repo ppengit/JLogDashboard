@@ -71,6 +71,42 @@ public sealed class OptionsAndUtilityTests
     }
 
     [Fact]
+    public void Analyze_ReturnsErrorsAndWarningsWithSeverity()
+    {
+        var missingDirectory = Path.Combine(Path.GetTempPath(), "jlog-missing-" + Guid.NewGuid().ToString("N"));
+        var options = new JLogDashboardOptions
+        {
+            BasicAuth =
+            {
+                Enabled = true,
+                Username = "admin",
+                PasswordSha256 = "invalid-hash"
+            },
+            Projects =
+            {
+                new LogProjectOptions
+                {
+                    Name = "orders",
+                    DirectoryPath = missingDirectory,
+                    Provider = "custom"
+                }
+            }
+        };
+
+        var analysis = options.Analyze();
+
+        Assert.Contains(
+            analysis.Errors,
+            issue => issue.Message.Contains("PasswordSha256", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            analysis.Warnings,
+            issue => issue.Message.Contains("custom", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            analysis.Warnings,
+            issue => issue.Message.Contains("does not exist", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void AddJLogDashboard_BindsOptionsFromConfigurationSection()
     {
         var values = new Dictionary<string, string?>
@@ -123,5 +159,14 @@ public sealed class OptionsAndUtilityTests
 
         Assert.Equal("日志项目", catalog.Translate("zh-CN", "Projects"));
         Assert.Equal("Log projects", catalog.Translate("fr-FR", "Projects"));
+    }
+
+    [Fact]
+    public void Repository_ContainsRunnableSampleWebProject()
+    {
+        var repositoryRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
+        var projectPath = Path.Combine(repositoryRoot, "samples", "JLogDashboard.SampleWeb", "JLogDashboard.SampleWeb.csproj");
+
+        Assert.True(File.Exists(projectPath));
     }
 }

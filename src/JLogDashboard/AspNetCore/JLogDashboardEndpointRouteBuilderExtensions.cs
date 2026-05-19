@@ -33,6 +33,7 @@ public static class JLogDashboardEndpointRouteBuilderExtensions
         var routePrefix = NormalizeRoutePrefix(options.RoutePrefix);
 
         var group = endpoints.MapGroup(routePrefix);
+        group.AddEndpointFilter<JLogDashboardConfigurationEndpointFilter>();
         group.AddEndpointFilter<JLogDashboardFaultIsolationEndpointFilter>();
         group.AddEndpointFilter<JLogDashboardBasicAuthEndpointFilter>();
 
