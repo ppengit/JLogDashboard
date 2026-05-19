@@ -1,5 +1,7 @@
 # Deployment Guide
 
+[English](./deployment.md) | [简体中文](./zh-CN/deployment.md)
+
 This guide covers the common deployment patterns for JLogDashboard.
 
 ## Deployment Modes

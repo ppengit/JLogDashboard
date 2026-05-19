@@ -1,5 +1,7 @@
 # FAQ
 
+[English](./faq.md) | [简体中文](./zh-CN/faq.md)
+
 ## Does JLogDashboard store logs in a database?
 
 No. It reads log files directly from the filesystem.

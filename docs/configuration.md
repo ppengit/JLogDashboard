@@ -1,5 +1,7 @@
 # Configuration Reference
 
+[English](./configuration.md) | [简体中文](./zh-CN/configuration.md)
+
 JLogDashboard can be configured through code or through the `JLogDashboard` configuration section.
 
 ## Top-Level Options

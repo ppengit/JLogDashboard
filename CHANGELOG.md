@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 - Reworked the README into a cleaner public project homepage for GitHub and NuGet readers.
 - Added dedicated deployment, configuration, and FAQ documentation.
+- Added bilingual README and user-facing documentation, including language switch links for GitHub and NuGet readers.
 - Clarified standalone host port, bind-address, and route-prefix customization guidance.
 - Updated maintainer release documentation to match the current NuGet Trusted Publishing context.
 

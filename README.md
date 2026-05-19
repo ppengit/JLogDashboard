@@ -4,6 +4,8 @@
 [![NuGet](https://img.shields.io/nuget/v/JLogDashboard)](https://www.nuget.org/packages/JLogDashboard)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/ppengit/JLogDashboard/blob/main/LICENSE)
 
+[English](https://github.com/ppengit/JLogDashboard/blob/main/README.md) | [简体中文](https://github.com/ppengit/JLogDashboard/blob/main/README.zh-CN.md)
+
 JLogDashboard is a lightweight ASP.NET Core dashboard for viewing NLog, log4net, and Serilog file logs across multiple projects.
 
 It is designed for the common operational scenario where multiple .NET services write plain-text log files on one server, and engineers need a simple way to inspect recent logs, filter noise, and review exception stacks without introducing a separate log platform.
@@ -112,6 +114,10 @@ For a production-style sample, see [examples/appsettings.sample.json](https://gi
 - [Deployment Guide](https://github.com/ppengit/JLogDashboard/blob/main/docs/deployment.md)
 - [Configuration Reference](https://github.com/ppengit/JLogDashboard/blob/main/docs/configuration.md)
 - [FAQ](https://github.com/ppengit/JLogDashboard/blob/main/docs/faq.md)
+- [中文文档入口](https://github.com/ppengit/JLogDashboard/blob/main/README.zh-CN.md)
+- [部署指南（中文）](https://github.com/ppengit/JLogDashboard/blob/main/docs/zh-CN/deployment.md)
+- [配置参考（中文）](https://github.com/ppengit/JLogDashboard/blob/main/docs/zh-CN/configuration.md)
+- [常见问题（中文）](https://github.com/ppengit/JLogDashboard/blob/main/docs/zh-CN/faq.md)
 - [Changelog](https://github.com/ppengit/JLogDashboard/blob/main/CHANGELOG.md)
 - [Contributing](https://github.com/ppengit/JLogDashboard/blob/main/CONTRIBUTING.md)
 - [Security Policy](https://github.com/ppengit/JLogDashboard/blob/main/SECURITY.md)
