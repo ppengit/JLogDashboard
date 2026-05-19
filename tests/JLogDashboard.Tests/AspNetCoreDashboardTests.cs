@@ -7,7 +7,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using JLogDashboard.AspNetCore;
 using JLogDashboard.Configuration;
+using JLogDashboard.Localization;
 using JLogDashboard.Querying;
+using JLogDashboard.ReverseProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -246,6 +248,38 @@ public sealed class AspNetCoreDashboardTests
         Assert.Contains("DashboardUnavailable", await dashboardResponse.Content.ReadAsStringAsync());
         Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
         Assert.Contains("ok", await healthResponse.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task DashboardHtmlFailure_ReturnsControlledHtmlResponse()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(
+            workspace,
+            configureServices: services => services.AddSingleton<DashboardLocalizer>(_ => throw new InvalidOperationException("simulated dashboard page failure")));
+
+        var response = await client.GetAsync("/ops-logs");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal("text/html; charset=utf-8", response.Content.Headers.ContentType?.ToString());
+        Assert.Contains("temporarily unavailable", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task DashboardTextFailure_ReturnsControlledPlainTextResponse()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(
+            workspace,
+            configureServices: services => services.AddSingleton<NginxConfigGenerator>(_ => throw new InvalidOperationException("simulated nginx generation failure")));
+
+        var response = await client.GetAsync("/ops-logs/api/nginx");
+        var text = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal("text/plain; charset=utf-8", response.Content.Headers.ContentType?.ToString());
+        Assert.Contains("JLogDashboard request failed.", text);
     }
 
     private static HttpClient CreateClient(

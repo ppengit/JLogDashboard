@@ -33,11 +33,12 @@ public static class JLogDashboardEndpointRouteBuilderExtensions
         var routePrefix = NormalizeRoutePrefix(options.RoutePrefix);
 
         var group = endpoints.MapGroup(routePrefix);
-        group.AddEndpointFilter<JLogDashboardBasicAuthEndpointFilter>();
         group.AddEndpointFilter<JLogDashboardFaultIsolationEndpointFilter>();
+        group.AddEndpointFilter<JLogDashboardBasicAuthEndpointFilter>();
 
-        group.MapGet(string.Empty, (HttpContext context, DashboardLocalizer localizer) =>
+        group.MapGet(string.Empty, (HttpContext context) =>
         {
+            var localizer = context.RequestServices.GetRequiredService<DashboardLocalizer>();
             var request = context.Request;
             var origin = $"{request.Scheme}://{request.Host}";
             var html = DashboardPageRenderer.Render(new DashboardPageModel(
@@ -51,9 +52,11 @@ public static class JLogDashboardEndpointRouteBuilderExtensions
 
         group.MapPost(
             "/api/search",
-            async (LogQuery query, ILogQueryService service, CancellationToken cancellationToken)
+            async (HttpContext context, LogQuery query, CancellationToken cancellationToken)
                 => Results.Json(
-                    await service.SearchAsync(query, cancellationToken).ConfigureAwait(false),
+                    await context.RequestServices.GetRequiredService<ILogQueryService>()
+                        .SearchAsync(query, cancellationToken)
+                        .ConfigureAwait(false),
                     DashboardJsonOptions));
 
         group.MapGet("/api/projects", (JLogDashboardOptions currentOptions) =>
@@ -73,8 +76,9 @@ public static class JLogDashboardEndpointRouteBuilderExtensions
 
         group.MapGet(
             "/api/nginx",
-            (string? serverName, string? upstreamUrl, string? basePath, NginxConfigGenerator generator) =>
+            (HttpContext context, string? serverName, string? upstreamUrl, string? basePath) =>
             {
+                var generator = context.RequestServices.GetRequiredService<NginxConfigGenerator>();
                 var config = generator.Generate(new NginxConfigRequest
                 {
                     ServerName = serverName ?? "_",

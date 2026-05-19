@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.1.6
+
+- Extended dashboard fault isolation so failures during handler-level service resolution are also contained within the dashboard route.
+- Added regression tests for HTML fallback, plain-text fallback, project-enumeration failure tolerance, and cancellation propagation.
+- Tightened endpoint-filter ordering so dashboard fault isolation wraps the dashboard auth filter as the outermost guard.
+
 ## 0.1.5
 
 - Added dashboard fault isolation so common dashboard runtime failures stay within the dashboard route instead of breaking unrelated host endpoints.

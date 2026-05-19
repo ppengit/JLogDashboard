@@ -90,14 +90,81 @@ public sealed class LogQueryServiceTests
         Assert.Equal("good file entry", entry.Message);
     }
 
+    [Fact]
+    public async Task SearchAsync_SkipsProjectsWhoseEnumerationFailsAndReturnsRemainingResults()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var goodProjectPath = workspace.CreateProject("good", "good.log",
+            "[2026-05-19 02:16:00 ERR] surviving entry");
+        var brokenProjectPath = workspace.CreateProject("broken", "broken.log",
+            "[2026-05-19 02:17:00 ERR] broken entry");
+
+        var options = new JLogDashboardOptions
+        {
+            Projects =
+            {
+                new LogProjectOptions { Name = "broken", DirectoryPath = brokenProjectPath, Provider = "serilog" },
+                new LogProjectOptions { Name = "good", DirectoryPath = goodProjectPath, Provider = "serilog" }
+            }
+        };
+        var service = new TestableFileLogQueryService(options, LogParser.CreateDefault(), brokenProjectPath, brokenEnumeration: true);
+
+        var result = await service.SearchAsync(new LogQuery { Levels = { LogLevel.Error }, PageSize = 10 });
+
+        var entry = Assert.Single(result.Items);
+        Assert.Equal("good", entry.Project);
+        Assert.Equal("surviving entry", entry.Message);
+    }
+
+    [Fact]
+    public async Task SearchAsync_DoesNotSwallowCancellation()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var projectPath = workspace.CreateProject("orders", "orders.log",
+            "[2026-05-19 02:16:00 ERR] good file entry");
+
+        var options = new JLogDashboardOptions
+        {
+            Projects =
+            {
+                new LogProjectOptions { Name = "orders", DirectoryPath = projectPath, Provider = "serilog" }
+            }
+        };
+        var service = new TestableFileLogQueryService(options, LogParser.CreateDefault(), projectPath, cancelRead: true);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            service.SearchAsync(new LogQuery { Levels = { LogLevel.Error }, PageSize = 10 }, cts.Token));
+    }
+
     private sealed class TestableFileLogQueryService : FileLogQueryService
     {
         private readonly string _brokenPath;
+        private readonly bool _brokenEnumeration;
+        private readonly bool _cancelRead;
 
-        public TestableFileLogQueryService(JLogDashboardOptions options, LogParser parser, string brokenPath)
+        public TestableFileLogQueryService(
+            JLogDashboardOptions options,
+            LogParser parser,
+            string brokenPath,
+            bool brokenEnumeration = false,
+            bool cancelRead = false)
             : base(options, parser)
         {
             _brokenPath = brokenPath;
+            _brokenEnumeration = brokenEnumeration;
+            _cancelRead = cancelRead;
+        }
+
+        protected override IEnumerable<string> EnumerateLogFilesCore(LogProjectOptions project)
+        {
+            if (_brokenEnumeration && string.Equals(project.DirectoryPath, _brokenPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new IOException("simulated project enumeration failure");
+            }
+
+            return base.EnumerateLogFilesCore(project);
         }
 
         protected override Task<IReadOnlyList<string>> ReadTailLinesCoreAsync(
@@ -105,6 +172,11 @@ public sealed class LogQueryServiceTests
             long maxFileBytes,
             CancellationToken cancellationToken)
         {
+            if (_cancelRead)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
             if (string.Equals(filePath, _brokenPath, StringComparison.OrdinalIgnoreCase))
             {
                 throw new IOException("simulated unreadable log file");
