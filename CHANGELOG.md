@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.1.4
+
+- Reworked the README into a cleaner public project homepage for GitHub and NuGet readers.
+- Added dedicated deployment, configuration, and FAQ documentation.
+- Clarified standalone host port, bind-address, and route-prefix customization guidance.
+- Updated maintainer release documentation to match the current NuGet Trusted Publishing context.
+
 ## 0.1.3
 
 - Refined the public documentation structure for GitHub and NuGet presentation.

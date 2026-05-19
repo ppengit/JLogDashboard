@@ -24,7 +24,9 @@ Current publishing context:
 - Package ID: `JLogDashboard`
 - Package owner: `pp_nuget`
 - GitHub repository owner: `ppengit`
+- GitHub repository owner ID: `152782039`
 - GitHub repository: `JLogDashboard`
+- GitHub repository ID: `1242774470`
 - Workflow: `build.yml`
 - Environment: `production`
 
@@ -59,9 +61,9 @@ dotnet pack src/JLogDashboard/JLogDashboard.csproj --configuration Release --no-
 Example:
 
 ```bash
-git tag v0.1.3
+git tag v<version>
 git push origin main
-git push origin v0.1.3
+git push origin v<version>
 ```
 
 ## Verification

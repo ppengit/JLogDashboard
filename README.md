@@ -97,59 +97,25 @@ Default development URL:
 http://localhost:5088/jlog
 ```
 
-For a production-style sample, see [examples/appsettings.sample.json](https://github.com/ppengit/JLogDashboard/blob/main/examples/appsettings.sample.json).
+The standalone host bind address and port can be customized through `Urls` in `appsettings.json` or the `ASPNETCORE_URLS` environment variable. The dashboard path can be customized through `JLogDashboard:RoutePrefix`.
 
-## Configuration
-
-### Example configuration
-
-```json
-{
-  "JLogDashboard": {
-    "RoutePrefix": "/jlog",
-    "Culture": "zh-CN",
-    "DefaultPageSize": 50,
-    "MaxPageSize": 500,
-    "MaxFileBytes": 10485760,
-    "BasicAuth": {
-      "Enabled": true,
-      "Username": "admin",
-      "Password": "",
-      "PasswordSha256": "replace-with-sha256-hex",
-      "Realm": "JLogDashboard",
-      "MaxFailedAttempts": 5,
-      "LockoutSeconds": 300
-    },
-    "Projects": [
-      {
-        "Name": "orders",
-        "DirectoryPath": "/var/log/orders",
-        "Provider": "serilog",
-        "FileSearchPattern": "*.log",
-        "Recursive": false
-      },
-      {
-        "Name": "billing",
-        "DirectoryPath": "/var/log/billing",
-        "Provider": "nlog",
-        "FileSearchPattern": "*.log",
-        "Recursive": true
-      }
-    ]
-  }
-}
-```
-
-### Environment variables
-
-Sensitive settings should be provided through environment variables in shared or production environments.
+Example:
 
 ```bash
-JLogDashboard__BasicAuth__Enabled=true
-JLogDashboard__BasicAuth__Username=admin
-JLogDashboard__BasicAuth__PasswordSha256=<sha256>
-ASPNETCORE_URLS=http://127.0.0.1:5088
+ASPNETCORE_URLS=http://0.0.0.0:5099 dotnet run --project src/JLogDashboard.Host
 ```
+
+For a production-style sample, see [examples/appsettings.sample.json](https://github.com/ppengit/JLogDashboard/blob/main/examples/appsettings.sample.json).
+
+## Documentation Map
+
+- [Deployment Guide](https://github.com/ppengit/JLogDashboard/blob/main/docs/deployment.md)
+- [Configuration Reference](https://github.com/ppengit/JLogDashboard/blob/main/docs/configuration.md)
+- [FAQ](https://github.com/ppengit/JLogDashboard/blob/main/docs/faq.md)
+- [Changelog](https://github.com/ppengit/JLogDashboard/blob/main/CHANGELOG.md)
+- [Contributing](https://github.com/ppengit/JLogDashboard/blob/main/CONTRIBUTING.md)
+- [Security Policy](https://github.com/ppengit/JLogDashboard/blob/main/SECURITY.md)
+- [Example Configuration](https://github.com/ppengit/JLogDashboard/blob/main/examples/appsettings.sample.json)
 
 ## Security Notes
 
@@ -188,12 +154,9 @@ server {
 - Designed for operational inspection, not long-term analytics or alerting.
 - Built-in authentication is intentionally simple and should be treated like an internal-tool guard, not a full identity system.
 
-## Documentation
+## Additional Resources
 
-- [Changelog](https://github.com/ppengit/JLogDashboard/blob/main/CHANGELOG.md)
-- [Contributing](https://github.com/ppengit/JLogDashboard/blob/main/CONTRIBUTING.md)
-- [Security Policy](https://github.com/ppengit/JLogDashboard/blob/main/SECURITY.md)
-- [Example Configuration](https://github.com/ppengit/JLogDashboard/blob/main/examples/appsettings.sample.json)
+- [Maintainer Release Guide](https://github.com/ppengit/JLogDashboard/blob/main/docs/maintainers/releasing.md)
 
 ## Development
 
