@@ -6,13 +6,13 @@
     <Nullable>enable</Nullable>
     <IsPackable>true</IsPackable>
     <PackageId>JLogDashboard</PackageId>
-    <VersionPrefix>0.1.4</VersionPrefix>
+    <VersionPrefix>0.1.5</VersionPrefix>
     <Title>JLogDashboard</Title>
     <Authors>penjay</Authors>
     <Company>penjay</Company>
     <Copyright>Copyright (c) 2026 penjay (peng.it@qq.com)</Copyright>
     <Description>Lightweight ASP.NET Core log dashboard for browsing NLog, log4net, and Serilog file logs across multiple .NET projects.</Description>
-    <PackageReleaseNotes>Refined the public README for GitHub and NuGet, added bilingual README and user docs, and clarified standalone host port and route customization.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added dashboard fault isolation for safer host integration, plus best-effort log reading and updated deployment guidance.</PackageReleaseNotes>
     <PackageTags>logging;logviewer;dashboard;aspnetcore;nlog;log4net;serilog;operations;observability;devops</PackageTags>
     <PackageProjectUrl>https://github.com/ppengit/JLogDashboard</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ppengit/JLogDashboard.git</RepositoryUrl>

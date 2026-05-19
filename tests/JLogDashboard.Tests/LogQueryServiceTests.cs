@@ -66,6 +66,54 @@ public sealed class LogQueryServiceTests
         Assert.Equal("recent failure", entry.Message);
     }
 
+    [Fact]
+    public async Task SearchAsync_SkipsUnreadableFilesAndReturnsRemainingResults()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var projectPath = workspace.CreateProject("orders", "orders.log",
+            "[2026-05-19 02:16:00 ERR] good file entry");
+        var brokenPath = Path.Combine(projectPath, "broken.log");
+        File.WriteAllText(brokenPath, "[2026-05-19 02:17:00 ERR] broken file entry");
+
+        var options = new JLogDashboardOptions
+        {
+            Projects =
+            {
+                new LogProjectOptions { Name = "orders", DirectoryPath = projectPath, Provider = "serilog" }
+            }
+        };
+        var service = new TestableFileLogQueryService(options, LogParser.CreateDefault(), brokenPath);
+
+        var result = await service.SearchAsync(new LogQuery { Levels = { LogLevel.Error }, PageSize = 10 });
+
+        var entry = Assert.Single(result.Items);
+        Assert.Equal("good file entry", entry.Message);
+    }
+
+    private sealed class TestableFileLogQueryService : FileLogQueryService
+    {
+        private readonly string _brokenPath;
+
+        public TestableFileLogQueryService(JLogDashboardOptions options, LogParser parser, string brokenPath)
+            : base(options, parser)
+        {
+            _brokenPath = brokenPath;
+        }
+
+        protected override Task<IReadOnlyList<string>> ReadTailLinesCoreAsync(
+            string filePath,
+            long maxFileBytes,
+            CancellationToken cancellationToken)
+        {
+            if (string.Equals(filePath, _brokenPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new IOException("simulated unreadable log file");
+            }
+
+            return base.ReadTailLinesCoreAsync(filePath, maxFileBytes, cancellationToken);
+        }
+    }
+
     private sealed class TemporaryLogWorkspace : IDisposable
     {
         private readonly string _root = Path.Combine(Path.GetTempPath(), "jlog-" + Guid.NewGuid().ToString("N"));

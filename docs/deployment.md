@@ -136,3 +136,4 @@ server {
 - JLogDashboard reads from log files directly and does not maintain a separate index.
 - Large files are read from the tail window defined by `MaxFileBytes`.
 - The dashboard is intended for inspection and troubleshooting, not for centralized long-term analytics.
+- Common dashboard runtime faults are isolated to the dashboard route so unrelated host endpoints can continue serving requests.

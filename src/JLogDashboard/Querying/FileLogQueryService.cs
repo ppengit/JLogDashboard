@@ -1,22 +1,29 @@
 using System.Text;
 using JLogDashboard.Configuration;
 using JLogDashboard.Parsing;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace JLogDashboard.Querying;
 
 /// <summary>
 /// Searches configured log files directly from disk.
 /// </summary>
-public sealed class FileLogQueryService : ILogQueryService
+public class FileLogQueryService : ILogQueryService
 {
     private readonly JLogDashboardOptions _options;
     private readonly LogParser _parser;
+    private readonly ILogger<FileLogQueryService> _logger;
 
     /// <summary>Creates a file-backed query service.</summary>
-    public FileLogQueryService(JLogDashboardOptions options, LogParser parser)
+    public FileLogQueryService(
+        JLogDashboardOptions options,
+        LogParser parser,
+        ILogger<FileLogQueryService>? logger = null)
     {
         _options = options;
         _parser = parser;
+        _logger = logger ?? NullLogger<FileLogQueryService>.Instance;
     }
 
     /// <inheritdoc />
@@ -33,11 +40,46 @@ public sealed class FileLogQueryService : ILogQueryService
                 continue;
             }
 
-            foreach (var file in EnumerateLogFiles(project))
+            string[] files;
+            try
+            {
+                files = EnumerateLogFilesCore(project).ToArray();
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "JLogDashboard skipped project {ProjectName} because log file enumeration failed for {DirectoryPath}.",
+                    project.Name,
+                    project.DirectoryPath);
+                continue;
+            }
+
+            foreach (var file in files)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var lines = await ReadTailLinesAsync(file, _options.MaxFileBytes, cancellationToken).ConfigureAwait(false);
-                entries.AddRange(_parser.Parse(new LogParseContext(project.Name, project.Provider, file), lines));
+                try
+                {
+                    // One unreadable log file should not make the whole dashboard query unavailable.
+                    var lines = await ReadTailLinesCoreAsync(file, _options.MaxFileBytes, cancellationToken).ConfigureAwait(false);
+                    entries.AddRange(_parser.Parse(new LogParseContext(project.Name, project.Provider, file), lines));
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "JLogDashboard skipped file {FilePath} in project {ProjectName} because it could not be read.",
+                        file,
+                        project.Name);
+                }
             }
         }
 
@@ -78,12 +120,20 @@ public sealed class FileLogQueryService : ILogQueryService
         return _options.Projects.Where(project => string.Equals(project.Name, query.Project, StringComparison.OrdinalIgnoreCase));
     }
 
+    protected virtual IEnumerable<string> EnumerateLogFilesCore(LogProjectOptions project) => EnumerateLogFiles(project);
+
     private static IEnumerable<string> EnumerateLogFiles(LogProjectOptions project)
     {
         var pattern = string.IsNullOrWhiteSpace(project.FileSearchPattern) ? "*.log" : project.FileSearchPattern;
         var option = project.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
         return Directory.EnumerateFiles(project.DirectoryPath, pattern, option);
     }
+
+    protected virtual Task<IReadOnlyList<string>> ReadTailLinesCoreAsync(
+        string filePath,
+        long maxFileBytes,
+        CancellationToken cancellationToken)
+        => ReadTailLinesAsync(filePath, maxFileBytes, cancellationToken);
 
     private static async Task<IReadOnlyList<string>> ReadTailLinesAsync(
         string filePath,

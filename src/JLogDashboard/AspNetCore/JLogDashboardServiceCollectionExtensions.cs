@@ -61,6 +61,7 @@ public static class JLogDashboardServiceCollectionExtensions
         services.AddSingleton<NginxConfigGenerator>();
         services.AddSingleton<JLogDashboardBasicAuthGuard>();
         services.AddScoped<JLogDashboardBasicAuthEndpointFilter>();
+        services.AddScoped<JLogDashboardFaultIsolationEndpointFilter>();
         return services;
     }
 }

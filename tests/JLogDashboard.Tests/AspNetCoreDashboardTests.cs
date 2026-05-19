@@ -10,8 +10,10 @@ using JLogDashboard.Configuration;
 using JLogDashboard.Querying;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Routing;
 
 namespace JLogDashboard.Tests;
 
@@ -228,9 +230,29 @@ public sealed class AspNetCoreDashboardTests
         Assert.True(second.Headers.RetryAfter?.Delta?.TotalSeconds > 0);
     }
 
+    [Fact]
+    public async Task DashboardFailure_DoesNotBreakNonDashboardEndpoints()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(
+            workspace,
+            configureServices: services => services.AddSingleton<ILogQueryService, ThrowingLogQueryService>(),
+            configureEndpoints: endpoints => endpoints.MapGet("/health", () => Results.Ok(new { status = "ok" })));
+
+        var dashboardResponse = await client.PostAsJsonAsync("/ops-logs/api/search", new LogQuery { PageSize = 10 });
+        var healthResponse = await client.GetAsync("/health");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, dashboardResponse.StatusCode);
+        Assert.Contains("DashboardUnavailable", await dashboardResponse.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.OK, healthResponse.StatusCode);
+        Assert.Contains("ok", await healthResponse.Content.ReadAsStringAsync());
+    }
+
     private static HttpClient CreateClient(
         TemporaryLogWorkspace workspace,
-        Action<JLogDashboardOptions>? configure = null)
+        Action<JLogDashboardOptions>? configure = null,
+        Action<IServiceCollection>? configureServices = null,
+        Action<IEndpointRouteBuilder>? configureEndpoints = null)
     {
         var builder = new WebHostBuilder()
             .ConfigureServices(services =>
@@ -247,11 +269,16 @@ public sealed class AspNetCoreDashboardTests
                     });
                     configure?.Invoke(options);
                 });
+                configureServices?.Invoke(services);
             })
             .Configure(app =>
             {
                 app.UseRouting();
-                app.UseEndpoints(endpoints => endpoints.MapJLogDashboard());
+                app.UseEndpoints(endpoints =>
+                {
+                    configureEndpoints?.Invoke(endpoints);
+                    endpoints.MapJLogDashboard();
+                });
             });
 
         return new TestServer(builder).CreateClient();
@@ -265,6 +292,12 @@ public sealed class AspNetCoreDashboardTests
 
     private static string ToSha256Hex(string value)
         => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
+
+    private sealed class ThrowingLogQueryService : ILogQueryService
+    {
+        public Task<LogQueryResult> SearchAsync(LogQuery query, CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("simulated dashboard failure");
+    }
 
     private sealed class TemporaryLogWorkspace : IDisposable
     {

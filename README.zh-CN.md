@@ -130,6 +130,7 @@ ASPNETCORE_URLS=http://0.0.0.0:5099 dotnet run --project src/JLogDashboard.Host
 - 同一客户端的重复错误凭据会触发临时锁定。
 - 部署在 nginx 或其他反向代理之后时，需正确转发 `X-Forwarded-For`，让锁定机制识别真实客户端。
 - 不要把日志目录指向过于宽泛的父目录，以免暴露无关的敏感文件或配置文件。
+- Dashboard 运行时故障会限制在看板路由内部。常见的日志读取失败或端点异常不应影响宿主应用的其他业务接口。
 
 ## 反向代理
 

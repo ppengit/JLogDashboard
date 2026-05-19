@@ -34,6 +34,7 @@ public static class JLogDashboardEndpointRouteBuilderExtensions
 
         var group = endpoints.MapGroup(routePrefix);
         group.AddEndpointFilter<JLogDashboardBasicAuthEndpointFilter>();
+        group.AddEndpointFilter<JLogDashboardFaultIsolationEndpointFilter>();
 
         group.MapGet(string.Empty, (HttpContext context, DashboardLocalizer localizer) =>
         {

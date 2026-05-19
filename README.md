@@ -131,6 +131,7 @@ For a production-style sample, see [examples/appsettings.sample.json](https://gi
 - Repeated invalid credentials trigger a temporary lockout for the same client IP.
 - When deployed behind nginx or another reverse proxy, forward `X-Forwarded-For` so the lockout mechanism can identify the actual client.
 - Do not point log directories at broad parent folders that may contain unrelated secrets or configuration files.
+- Dashboard runtime faults are isolated to the dashboard route. Common log-read and endpoint failures should not break unrelated host application endpoints.
 
 ## Reverse Proxy
 

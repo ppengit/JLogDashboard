@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.1.5
+
+- Added dashboard fault isolation so common dashboard runtime failures stay within the dashboard route instead of breaking unrelated host endpoints.
+- Added best-effort log reading so unreadable log files are skipped and remaining results can still be returned.
+- Documented host-safety expectations for dashboard runtime failures in the English and Chinese deployment guides and READMEs.
+
 ## 0.1.4
 
 - Reworked the README into a cleaner public project homepage for GitHub and NuGet readers.
