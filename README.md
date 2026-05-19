@@ -152,7 +152,7 @@ server {
 
 普通 push 和 PR 只运行构建测试。发布版本时创建 `v*` tag 或手动触发 GitHub Actions，工作流会进入 `production` 环境并使用 NuGet OIDC 短期凭据发布包。
 
-注意：`NuGet/login@v1` 的 `user` 参数需要填写 Trusted Publishing 策略创建者账号。当前仓库应填写 `ppengit`，而不是包 owner `pp_nuget`。
+注意：`NuGet/login@v1` 的 `user` 参数需要填写 Trusted Publishing 策略创建者账号。当前仓库应填写 `penjay`，而不是包 owner `pp_nuget` 或 GitHub 仓库 owner `ppengit`。
 
 ## 本地开发
 

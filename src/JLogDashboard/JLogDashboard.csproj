@@ -6,13 +6,13 @@
     <Nullable>enable</Nullable>
     <IsPackable>true</IsPackable>
     <PackageId>JLogDashboard</PackageId>
-    <VersionPrefix>0.1.1</VersionPrefix>
+    <VersionPrefix>0.1.2</VersionPrefix>
     <Title>JLogDashboard</Title>
     <Authors>penjay</Authors>
     <Company>penjay</Company>
     <Copyright>Copyright (c) 2026 penjay (peng.it@qq.com)</Copyright>
     <Description>A lightweight ASP.NET Core dashboard for viewing NLog, log4net, and Serilog file logs across multiple projects.</Description>
-    <PackageReleaseNotes>Fix Trusted Publishing configuration and refine Basic Auth lockout handling for anonymous requests.</PackageReleaseNotes>
+    <PackageReleaseNotes>Fix Trusted Publishing policy creator mapping and refine Basic Auth lockout handling for anonymous requests.</PackageReleaseNotes>
     <PackageTags>logging;dashboard;aspnetcore;nlog;log4net;serilog;logs</PackageTags>
     <PackageProjectUrl>https://github.com/ppengit/JLogDashboard</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ppengit/JLogDashboard.git</RepositoryUrl>

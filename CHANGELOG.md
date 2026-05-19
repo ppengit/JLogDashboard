@@ -1,5 +1,10 @@
 # 更新日志
 
+## 0.1.2
+
+- 修正 NuGet Trusted Publishing 登录用户名为策略创建者 `penjay`。
+- 保留 Basic Auth 匿名访问不计入锁定次数的行为修正。
+
 ## 0.1.1
 
 - 修复 NuGet Trusted Publishing 登录用户名，改为策略创建者 `ppengit`。
