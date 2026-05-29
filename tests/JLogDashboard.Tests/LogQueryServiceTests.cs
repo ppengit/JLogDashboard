@@ -67,6 +67,45 @@ public sealed class LogQueryServiceTests
     }
 
     [Fact]
+    public async Task SearchAsync_UsesProjectParserConfiguration()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var projectPath = workspace.CreateProject("custom", "custom.log",
+            "2026/05/29 08:30:01||Orders.Api||ERROR||failed order 1002");
+
+        var options = new JLogDashboardOptions
+        {
+            Projects =
+            {
+                new LogProjectOptions
+                {
+                    Name = "custom",
+                    DirectoryPath = projectPath,
+                    Provider = "custom",
+                    Parser =
+                    {
+                        Mode = "delimited",
+                        Delimiter = "||",
+                        TimestampIndex = 0,
+                        LoggerIndex = 1,
+                        LevelIndex = 2,
+                        MessageIndex = 3,
+                        TimestampFormat = "yyyy/MM/dd HH:mm:ss"
+                    }
+                }
+            }
+        };
+        var service = new FileLogQueryService(options, LogParser.CreateDefault());
+
+        var result = await service.SearchAsync(new LogQuery { Levels = { LogLevel.Error }, PageSize = 10 });
+
+        var entry = Assert.Single(result.Items);
+        Assert.Equal("custom", entry.Project);
+        Assert.Equal("Orders.Api", entry.Logger);
+        Assert.Equal("failed order 1002", entry.Message);
+    }
+
+    [Fact]
     public async Task SearchAsync_SkipsUnreadableFilesAndReturnsRemainingResults()
     {
         using var workspace = new TemporaryLogWorkspace();

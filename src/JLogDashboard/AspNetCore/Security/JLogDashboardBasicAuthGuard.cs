@@ -138,7 +138,7 @@ internal sealed class JLogDashboardBasicAuthGuard
 
     private static string GetClientKey(HttpContext context)
     {
-        // Behind nginx, X-Forwarded-For is the stable identifier for basic rate limiting.
+        // Behind a reverse proxy, X-Forwarded-For is the stable identifier for basic rate limiting.
         if (context.Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
         {
             var first = forwardedFor.ToString()

@@ -109,6 +109,78 @@ JLogDashboard 支持通过代码配置，也支持通过 `JLogDashboard` 配置�
 - 类型：`bool`
 - 用途：是否包含子目录
 
+### `Parser`
+
+用于配置自定义文本日志格式。未配置或 `Mode` 为 `auto` 时，JLogDashboard 会使用内置识别器解析常见的 Serilog、NLog、log4net 和简单文本格式。
+
+#### `Parser.Mode`
+
+- 类型：`string`
+- 默认值：`auto`
+- 支持值：`auto`、`nlog-layout`、`log4net-pattern`、`serilog-template`、`delimited`、`regex`
+
+#### `Parser.Layout`
+
+- 类型：`string`
+- 当 `Mode` 为 `nlog-layout`、`log4net-pattern` 或 `serilog-template` 时使用
+- 用途：直接根据常见日志框架模板解析日志，避免再配置字段下标
+- 必需语义字段：时间和级别
+- 可选语义字段：logger/source context、消息、异常、换行
+- 其他元数据字段会作为日志头中的忽略字段处理
+- 这些解析器是面向文件日志查看的实用解析能力，不是完整复刻所有 NLog renderer、log4net conversion pattern 或 Serilog property formatter
+
+NLog layout 示例：
+
+```text
+${longdate}|${event-properties:item=EventId}|${level}|${logger}${newline}${message}${exception:format=tostring}
+```
+
+支持的 NLog 字段包括 `${longdate}`、`${date:format=...}`、`${level}`、`${logger}`、`${message}`、`${exception}`、`${newline}`。其他 renderer，例如 `${event-properties:item=EventId}` 或 `${threadid}`，会作为日志头中的忽略字段处理。
+
+log4net PatternLayout 示例：
+
+```text
+%date{yyyy-MM-dd HH:mm:ss,fff} [%thread] %-5level %logger - %message%newline%exception
+```
+
+支持的 log4net 字段包括 `%date`、`%level`、`%logger`、`%message`、`%exception`、`%newline`，以及 `%d`、`%p`、`%c`、`%m`、`%ex`、`%n` 等常见短写形式。`%-5level` 这类宽度修饰也可以识别。
+
+Serilog outputTemplate 示例：
+
+```text
+{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}
+```
+
+支持的 Serilog 字段包括 `{Timestamp:...}`、`{Level}`、`{SourceContext}`、`{Message}`、`{Exception}` 和 `{NewLine}`。日志头中的其他属性会作为忽略字段处理。
+
+#### `Parser.Delimiter`
+
+- 类型：`string`
+- 默认值：`|`
+- 当 `Mode` 为 `delimited` 时使用
+- 示例：`||`
+
+#### `Parser.TimestampIndex`、`Parser.LevelIndex`、`Parser.LoggerIndex`、`Parser.MessageIndex`、`Parser.ExceptionIndex`
+
+- 类型：`int` 或 `int?`
+- 当 `Mode` 为 `delimited` 时使用
+- 下标从 0 开始
+- `LoggerIndex` 和 `ExceptionIndex` 可省略
+- 当消息正文位于日志头之后的第一条续行时，`MessageIndex` 可以指向一个不存在的字段；此时 JLogDashboard 会把第一条续行提升为 `Message`，其余续行归入 `Exception`。
+
+#### `Parser.Pattern`
+
+- 类型：`string`
+- 当 `Mode` 为 `regex` 时使用
+- 必需命名分组：`timestamp`、`level`、`message`
+- 可选命名分组：`logger`、`exception`
+
+#### `Parser.TimestampFormat`
+
+- 类型：`string`
+- 可选
+- 示例：`yyyy/MM/dd HH:mm:ss`
+
 ## JSON 示例
 
 ```json
@@ -134,7 +206,33 @@ JLogDashboard 支持通过代码配置，也支持通过 `JLogDashboard` 配置�
         "DirectoryPath": "/var/log/orders",
         "Provider": "serilog",
         "FileSearchPattern": "*.log",
-        "Recursive": false
+        "Recursive": false,
+        "Parser": {
+          "Mode": "serilog-template",
+          "Layout": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "api.backend",
+        "DirectoryPath": "/var/log/api.backend",
+        "Provider": "nlog",
+        "FileSearchPattern": "*.log",
+        "Recursive": false,
+        "Parser": {
+          "Mode": "nlog-layout",
+          "Layout": "${longdate}|${event-properties:item=EventId}|${level}|${logger}${newline}${message}${exception:format=tostring}"
+        }
+      },
+      {
+        "Name": "legacy",
+        "DirectoryPath": "/var/log/legacy",
+        "Provider": "log4net",
+        "FileSearchPattern": "*.log",
+        "Recursive": false,
+        "Parser": {
+          "Mode": "log4net-pattern",
+          "Layout": "%date{yyyy-MM-dd HH:mm:ss,fff} [%thread] %-5level %logger - %message%newline%exception"
+        }
       }
     ]
   }
@@ -171,6 +269,8 @@ JLogDashboard__BasicAuth__PasswordSha256=<sha256>
 JLogDashboard__Projects__0__Name=orders
 JLogDashboard__Projects__0__DirectoryPath=/var/log/orders
 JLogDashboard__Projects__0__Provider=serilog
+JLogDashboard__Projects__0__Parser__Mode=serilog-template
+JLogDashboard__Projects__0__Parser__Layout={Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}
 ```
 
 ## 常见自定义示例
@@ -226,6 +326,8 @@ warning 可能包括：
 - 仍使用明文 Basic Auth 密码；
 - Basic Auth 已关闭；
 - `Provider` 使用了非内置值；
+- `Parser.Mode` 使用了非支持值；
+- 自定义解析器的分隔符、正则表达式或框架 layout/template 为空；
 - 启动时日志目录不存在；
 - `FileSearchPattern` 为空；
 - 使用了非内置界面文化。

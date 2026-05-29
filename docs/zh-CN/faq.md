@@ -26,7 +26,7 @@
 
 ## 可以单独跑在一个端口上吗？
 
-可以。仓库提供了 `src/JLogDashboard.Host` 用于独立宿主部署，Dashboard UI 里也带有 nginx 配置辅助。
+可以。你可以把它嵌入现有 ASP.NET Core 应用，并按常规方式控制该应用的监听地址；也可以使用仓库内的 `src/JLogDashboard.Host` 独立宿主监听专用端口。反向代理和 HTTPS 应保留在宿主或基础设施配置中，而不是放到 Dashboard UI 里生成。
 
 ## 怎么修改端口和访问路径？
 

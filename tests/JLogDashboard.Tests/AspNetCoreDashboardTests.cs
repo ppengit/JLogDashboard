@@ -9,7 +9,6 @@ using JLogDashboard.AspNetCore;
 using JLogDashboard.Configuration;
 using JLogDashboard.Localization;
 using JLogDashboard.Querying;
-using JLogDashboard.ReverseProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -27,7 +26,7 @@ public sealed class AspNetCoreDashboardTests
     };
 
     [Fact]
-    public async Task MapJLogDashboard_ServesDashboardHtmlWithConfigurationInputs()
+    public async Task MapJLogDashboard_ServesDashboardHtmlWithRuntimeQueryControls()
     {
         using var workspace = new TemporaryLogWorkspace();
         var client = CreateClient(workspace);
@@ -35,10 +34,105 @@ public sealed class AspNetCoreDashboardTests
         var html = await client.GetStringAsync("/ops-logs");
 
         Assert.Contains("JLogDashboard", html);
-        Assert.Contains("server-name-input", html);
-        Assert.Contains("upstream-url-input", html);
-        Assert.Contains("base-path-input", html);
-        Assert.Contains("copy-nginx-button", html);
+        Assert.Contains("project-input", html);
+        Assert.Contains("search-button", html);
+        Assert.Contains("prev-page-button", html);
+        Assert.Contains("next-page-button", html);
+        Assert.Contains("page-input", html);
+        Assert.Contains("min-height: 100vh", html);
+        Assert.DoesNotContain("route-prefix-input", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("api/nginx", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("copy-nginx-button", html, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task MapJLogDashboard_ServesViewportBoundLayoutWithInternalScrolling()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(workspace);
+
+        var html = await client.GetStringAsync("/ops-logs");
+
+        Assert.Contains("height: 100vh", html);
+        Assert.Contains("height: calc(100vh - 64px)", html);
+        Assert.Contains(".workspace", html);
+        Assert.Contains("overflow: hidden", html);
+        Assert.Contains(".table-wrap", html);
+        Assert.Contains("overflow: auto", html);
+    }
+
+    [Fact]
+    public async Task MapJLogDashboard_AutoLoadsLogsAfterPageInitialization()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(workspace);
+
+        var html = await client.GetStringAsync("/ops-logs");
+
+        Assert.Contains("searchLogs(true);", html);
+    }
+
+    [Fact]
+    public async Task MapJLogDashboard_UsesCredentialFreeAbsoluteApiUrlForBrowserFetch()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(workspace);
+
+        var html = await client.GetStringAsync("/ops-logs");
+
+        Assert.Contains("window.location.origin", html);
+        Assert.Contains("${apiBaseUrl}/api/search", html);
+        Assert.DoesNotContain("fetch(`${routePrefix}/api/search`", html);
+    }
+
+    [Fact]
+    public async Task MapJLogDashboard_DoesNotPreserveTemplateWhitespaceInMessageTableCell()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(workspace);
+
+        var html = await client.GetStringAsync("/ops-logs");
+
+        Assert.Contains(".message-main", html);
+        Assert.Contains("white-space: pre-wrap", html);
+        Assert.DoesNotContain(".message {\n      min-width: 360px;\n      white-space: pre-wrap;", html);
+        Assert.DoesNotContain("<td class=\"message\">\n            <div", html);
+        Assert.Contains("<td class=\"message\"><div class=\"message-head\"><div class=\"message-main\"", html);
+    }
+
+    [Fact]
+    public async Task MapJLogDashboard_RendersSourceFileBelowTimestampWithoutSeparateFileColumn()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(workspace);
+
+        var html = await client.GetStringAsync("/ops-logs");
+
+        Assert.Contains("<td class=\"time-cell\"><div class=\"timestamp\"", html);
+        Assert.Contains("<div class=\"source-file\"", html);
+        Assert.Contains("shortFileName(item.sourcePath)", html);
+        Assert.DoesNotContain("class=\"file-cell\"", html);
+        Assert.DoesNotContain("<th>文件</th>", html);
+        Assert.DoesNotContain("<th>File</th>", html);
+        Assert.Contains("colspan=\"5\"", html);
+        Assert.DoesNotContain("colspan=\"6\"", html);
+    }
+
+    [Fact]
+    public async Task MapJLogDashboard_GroupsDuplicateRowsOnCurrentPageAndShowsCountTag()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(workspace);
+
+        var html = await client.GetStringAsync("/ops-logs");
+
+        Assert.Contains("function aggregateCurrentPageItems(items)", html);
+        Assert.Contains("function aggregationKey(item)", html);
+        Assert.Contains("renderRows(aggregateCurrentPageItems(result.items));", html);
+        Assert.Contains("class=\"count-tag\"", html);
+        Assert.Contains("item.count > 1", html);
+        Assert.Contains("item.count} ${occurrencesText}", html);
+        Assert.Contains("count.textContent = `${result.total} ${resultsText}`;", html);
     }
 
     [Fact]
@@ -99,17 +193,14 @@ public sealed class AspNetCoreDashboardTests
     }
 
     [Fact]
-    public async Task NginxEndpoint_UsesRequestInputs()
+    public async Task NginxEndpoint_IsNotMapped()
     {
         using var workspace = new TemporaryLogWorkspace();
         var client = CreateClient(workspace);
 
-        var config = await client.GetStringAsync(
-            "/ops-logs/api/nginx?serverName=logs.example.com&upstreamUrl=http://127.0.0.1:5099&basePath=/ops-logs");
+        var response = await client.GetAsync("/ops-logs/api/nginx");
 
-        Assert.Contains("server_name logs.example.com;", config);
-        Assert.Contains("proxy_pass http://127.0.0.1:5099;", config);
-        Assert.Contains("location /ops-logs/", config);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -264,22 +355,6 @@ public sealed class AspNetCoreDashboardTests
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         Assert.Equal("text/html; charset=utf-8", response.Content.Headers.ContentType?.ToString());
         Assert.Contains("temporarily unavailable", html, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task DashboardTextFailure_ReturnsControlledPlainTextResponse()
-    {
-        using var workspace = new TemporaryLogWorkspace();
-        var client = CreateClient(
-            workspace,
-            configureServices: services => services.AddSingleton<NginxConfigGenerator>(_ => throw new InvalidOperationException("simulated nginx generation failure")));
-
-        var response = await client.GetAsync("/ops-logs/api/nginx");
-        var text = await response.Content.ReadAsStringAsync();
-
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-        Assert.Equal("text/plain; charset=utf-8", response.Content.Headers.ContentType?.ToString());
-        Assert.Contains("JLogDashboard request failed.", text);
     }
 
     [Fact]

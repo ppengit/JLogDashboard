@@ -7,14 +7,6 @@ internal static class DashboardFailureResponses
     public static IResult CreateUnavailableResponse(HttpContext context)
     {
         // Keep dashboard failures inside the dashboard surface and match the endpoint response shape.
-        if (IsPlainTextApiRequest(context))
-        {
-            return Results.Text(
-                "JLogDashboard request failed.",
-                "text/plain; charset=utf-8",
-                statusCode: StatusCodes.Status503ServiceUnavailable);
-        }
-
         if (IsJsonApiRequest(context))
         {
             return Results.Json(
@@ -53,14 +45,6 @@ internal static class DashboardFailureResponses
 
     public static IResult CreateMisconfiguredResponse(HttpContext context)
     {
-        if (IsPlainTextApiRequest(context))
-        {
-            return Results.Text(
-                "JLogDashboard is misconfigured. Fix the Dashboard configuration and try again.",
-                "text/plain; charset=utf-8",
-                statusCode: StatusCodes.Status503ServiceUnavailable);
-        }
-
         if (IsJsonApiRequest(context))
         {
             return Results.Json(
@@ -103,9 +87,6 @@ internal static class DashboardFailureResponses
 
     private static bool IsJsonApiRequest(HttpContext context)
         => context.Request.Path.Value?.Contains("/api/", StringComparison.OrdinalIgnoreCase) == true;
-
-    private static bool IsPlainTextApiRequest(HttpContext context)
-        => context.Request.Path.Value?.EndsWith("/api/nginx", StringComparison.OrdinalIgnoreCase) == true;
 
     private static bool AcceptsHtml(HttpContext context)
     {

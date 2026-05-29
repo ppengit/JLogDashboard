@@ -66,7 +66,7 @@ public class FileLogQueryService : ILogQueryService
                 {
                     // One unreadable log file should not make the whole dashboard query unavailable.
                     var lines = await ReadTailLinesCoreAsync(file, _options.MaxFileBytes, cancellationToken).ConfigureAwait(false);
-                    entries.AddRange(_parser.Parse(new LogParseContext(project.Name, project.Provider, file), lines));
+                    entries.AddRange(_parser.Parse(new LogParseContext(project.Name, project.Provider, file, project.Parser), lines));
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {

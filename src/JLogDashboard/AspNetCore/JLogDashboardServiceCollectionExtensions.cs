@@ -3,7 +3,6 @@ using JLogDashboard.AspNetCore.Security;
 using JLogDashboard.Localization;
 using JLogDashboard.Parsing;
 using JLogDashboard.Querying;
-using JLogDashboard.ReverseProxy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -63,7 +62,6 @@ public static class JLogDashboardServiceCollectionExtensions
         services.AddSingleton(LogParser.CreateDefault());
         services.AddSingleton<ILogQueryService, FileLogQueryService>();
         services.AddSingleton(DashboardLocalizer.CreateDefault());
-        services.AddSingleton<NginxConfigGenerator>();
         services.AddSingleton<JLogDashboardBasicAuthGuard>();
         services.AddHostedService<JLogDashboardStartupDiagnosticsHostedService>();
         services.AddScoped<JLogDashboardConfigurationEndpointFilter>();

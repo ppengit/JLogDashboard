@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.1.8
+
+- Added project-level parser configuration for common NLog layout strings, log4net PatternLayout strings, Serilog outputTemplate strings, custom delimited logs, and regex-based plain-text log layouts.
+- Hardened explicit template parser fallback so missing layout/template values do not throw during dashboard queries.
+- Improved parsing for log headers whose message body is emitted as following continuation lines.
+- Reworked the Dashboard UI into a full-width operational view with project switching, filtering, automatic initial loading, internal scrolling, refresh, and pagination controls.
+- Added current-page duplicate log grouping with count tags and moved source file display under the timestamp.
+- Removed nginx-specific configuration generation from the Dashboard UI and API surface. Route, port, log directories, authentication, and parser rules are now documented as host-level configuration.
+- Updated English and Chinese documentation and example configuration to describe explicit parser modes and the embedded/standalone hosting model.
+
 ## 0.1.7
 
 - Added configuration severity analysis so JLogDashboard can distinguish fatal misconfiguration from advisory operational warnings.

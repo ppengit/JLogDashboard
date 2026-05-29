@@ -109,6 +109,78 @@ Each configured project represents a searchable log root.
 - Type: `bool`
 - Purpose: whether subdirectories should be included
 
+### `Parser`
+
+Optional parser settings for custom text log layouts. If omitted or set to `auto`, JLogDashboard uses the built-in recognizers for common Serilog, NLog, log4net, and simple text layouts.
+
+#### `Parser.Mode`
+
+- Type: `string`
+- Default: `auto`
+- Supported values: `auto`, `nlog-layout`, `log4net-pattern`, `serilog-template`, `delimited`, `regex`
+
+#### `Parser.Layout`
+
+- Type: `string`
+- Used when `Mode` is `nlog-layout`, `log4net-pattern`, or `serilog-template`
+- Purpose: parse common logging-framework templates without requiring field indexes
+- Required semantic fields: timestamp and level
+- Optional semantic fields: logger/source context, message, exception, newline
+- Other metadata fields are treated as ignored fields in the log header
+- These parsers are pragmatic file-log readers, not full implementations of every NLog renderer, log4net conversion pattern, or Serilog property formatter
+
+NLog layout example:
+
+```text
+${longdate}|${event-properties:item=EventId}|${level}|${logger}${newline}${message}${exception:format=tostring}
+```
+
+Supported NLog fields include `${longdate}`, `${date:format=...}`, `${level}`, `${logger}`, `${message}`, `${exception}`, and `${newline}`. Other renderers, such as `${event-properties:item=EventId}` or `${threadid}`, are treated as ignored header fields.
+
+log4net PatternLayout example:
+
+```text
+%date{yyyy-MM-dd HH:mm:ss,fff} [%thread] %-5level %logger - %message%newline%exception
+```
+
+Supported log4net fields include `%date`, `%level`, `%logger`, `%message`, `%exception`, `%newline`, and their common short forms such as `%d`, `%p`, `%c`, `%m`, `%ex`, and `%n`. Width modifiers such as `%-5level` are accepted.
+
+Serilog outputTemplate example:
+
+```text
+{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}
+```
+
+Supported Serilog fields include `{Timestamp:...}`, `{Level}`, `{SourceContext}`, `{Message}`, `{Exception}`, and `{NewLine}`. Additional properties in the header are treated as ignored fields.
+
+#### `Parser.Delimiter`
+
+- Type: `string`
+- Default: `|`
+- Used when `Mode` is `delimited`
+- Example: `||`
+
+#### `Parser.TimestampIndex`, `Parser.LevelIndex`, `Parser.LoggerIndex`, `Parser.MessageIndex`, `Parser.ExceptionIndex`
+
+- Type: `int` or `int?`
+- Used when `Mode` is `delimited`
+- Indexes are zero-based
+- `LoggerIndex` and `ExceptionIndex` can be omitted
+- `MessageIndex` may point to a missing field when the first continuation line contains the message body; in that case JLogDashboard promotes the first continuation line to `Message` and keeps the remaining continuation lines as `Exception`.
+
+#### `Parser.Pattern`
+
+- Type: `string`
+- Used when `Mode` is `regex`
+- Required named groups: `timestamp`, `level`, `message`
+- Optional named groups: `logger`, `exception`
+
+#### `Parser.TimestampFormat`
+
+- Type: `string`
+- Optional
+- Example: `yyyy/MM/dd HH:mm:ss`
+
 ## JSON Example
 
 ```json
@@ -134,7 +206,33 @@ Each configured project represents a searchable log root.
         "DirectoryPath": "/var/log/orders",
         "Provider": "serilog",
         "FileSearchPattern": "*.log",
-        "Recursive": false
+        "Recursive": false,
+        "Parser": {
+          "Mode": "serilog-template",
+          "Layout": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "api.backend",
+        "DirectoryPath": "/var/log/api.backend",
+        "Provider": "nlog",
+        "FileSearchPattern": "*.log",
+        "Recursive": false,
+        "Parser": {
+          "Mode": "nlog-layout",
+          "Layout": "${longdate}|${event-properties:item=EventId}|${level}|${logger}${newline}${message}${exception:format=tostring}"
+        }
+      },
+      {
+        "Name": "legacy",
+        "DirectoryPath": "/var/log/legacy",
+        "Provider": "log4net",
+        "FileSearchPattern": "*.log",
+        "Recursive": false,
+        "Parser": {
+          "Mode": "log4net-pattern",
+          "Layout": "%date{yyyy-MM-dd HH:mm:ss,fff} [%thread] %-5level %logger - %message%newline%exception"
+        }
       }
     ]
   }
@@ -171,6 +269,8 @@ JLogDashboard__BasicAuth__PasswordSha256=<sha256>
 JLogDashboard__Projects__0__Name=orders
 JLogDashboard__Projects__0__DirectoryPath=/var/log/orders
 JLogDashboard__Projects__0__Provider=serilog
+JLogDashboard__Projects__0__Parser__Mode=serilog-template
+JLogDashboard__Projects__0__Parser__Layout={Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}
 ```
 
 ## Common Customization Examples
@@ -226,6 +326,8 @@ Warnings can include:
 - plain-text Basic Auth password usage;
 - Basic Auth disabled;
 - unknown `Provider` values;
+- unsupported `Parser.Mode` values;
+- empty custom parser delimiter, regex pattern, or framework layout/template;
 - missing project directories at startup;
 - empty `FileSearchPattern`;
 - non-built-in UI culture values.

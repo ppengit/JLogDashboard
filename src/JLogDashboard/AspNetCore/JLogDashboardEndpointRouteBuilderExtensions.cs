@@ -2,7 +2,6 @@ using JLogDashboard.Configuration;
 using JLogDashboard.AspNetCore.Security;
 using JLogDashboard.Localization;
 using JLogDashboard.Querying;
-using JLogDashboard.ReverseProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -40,12 +39,9 @@ public static class JLogDashboardEndpointRouteBuilderExtensions
         group.MapGet(string.Empty, (HttpContext context) =>
         {
             var localizer = context.RequestServices.GetRequiredService<DashboardLocalizer>();
-            var request = context.Request;
-            var origin = $"{request.Scheme}://{request.Host}";
             var html = DashboardPageRenderer.Render(new DashboardPageModel(
                 routePrefix,
                 options.Culture,
-                origin,
                 options.Projects.Select(project => project.Name).ToArray(),
                 CreateTextCatalog(localizer, options.Culture)));
             return Results.Content(html, "text/html; charset=utf-8");
@@ -75,21 +71,6 @@ public static class JLogDashboardEndpointRouteBuilderExtensions
             return Results.Json(projects, DashboardJsonOptions);
         });
 
-        group.MapGet(
-            "/api/nginx",
-            (HttpContext context, string? serverName, string? upstreamUrl, string? basePath) =>
-            {
-                var generator = context.RequestServices.GetRequiredService<NginxConfigGenerator>();
-                var config = generator.Generate(new NginxConfigRequest
-                {
-                    ServerName = serverName ?? "_",
-                    UpstreamUrl = upstreamUrl ?? "http://127.0.0.1:5088",
-                    BasePath = basePath ?? routePrefix
-                });
-
-                return Results.Text(config, "text/plain; charset=utf-8");
-            });
-
         return endpoints;
     }
 
@@ -114,15 +95,12 @@ public static class JLogDashboardEndpointRouteBuilderExtensions
             "SearchText",
             "ExcludeText",
             "PageSize",
-            "Route",
             "Search",
-            "ServerName",
-            "UpstreamUrl",
-            "BasePath",
-            "GenerateNginx",
-            "CopyNginx",
             "LogEntries",
             "Results",
+            "Page",
+            "PreviousPage",
+            "NextPage",
             "Time",
             "Level",
             "Logger",
@@ -130,8 +108,11 @@ public static class JLogDashboardEndpointRouteBuilderExtensions
             "File",
             "RunSearch",
             "NoMatches",
+            "Loading",
+            "SearchFailed",
             "PlaceholderSearch",
-            "PlaceholderExclude"
+            "PlaceholderExclude",
+            "Occurrences"
         };
 
         return keys.ToDictionary(key => key, key => localizer.Translate(culture, key), StringComparer.OrdinalIgnoreCase);

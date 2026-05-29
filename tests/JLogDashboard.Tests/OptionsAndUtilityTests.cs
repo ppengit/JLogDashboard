@@ -1,6 +1,5 @@
 using JLogDashboard.Configuration;
 using JLogDashboard.Localization;
-using JLogDashboard.ReverseProxy;
 using JLogDashboard.AspNetCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -107,6 +106,74 @@ public sealed class OptionsAndUtilityTests
     }
 
     [Fact]
+    public void Analyze_AcceptsExplicitLog4NetAndSerilogParserModes()
+    {
+        using var root = new TemporaryDirectory();
+        var options = new JLogDashboardOptions
+        {
+            Projects =
+            {
+                new LogProjectOptions
+                {
+                    Name = "legacy",
+                    DirectoryPath = root.Path,
+                    Provider = "log4net",
+                    Parser =
+                    {
+                        Mode = "log4net-pattern",
+                        Layout = "%date %-5level %logger - %message%newline%exception"
+                    }
+                },
+                new LogProjectOptions
+                {
+                    Name = "orders",
+                    DirectoryPath = root.Path,
+                    Provider = "serilog",
+                    Parser =
+                    {
+                        Mode = "serilog-template",
+                        Layout = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"
+                    }
+                }
+            }
+        };
+
+        var analysis = options.Analyze();
+
+        Assert.DoesNotContain(
+            analysis.Warnings,
+            issue => issue.Message.Contains("not supported", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            analysis.Warnings,
+            issue => issue.Message.Contains("Parser Layout is empty", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Analyze_WarnsWhenExplicitTemplateParserLayoutIsEmpty()
+    {
+        using var root = new TemporaryDirectory();
+        var options = new JLogDashboardOptions
+        {
+            Projects =
+            {
+                new LogProjectOptions
+                {
+                    Name = "orders",
+                    DirectoryPath = root.Path,
+                    Provider = "serilog",
+                    Parser = { Mode = "serilog-template" }
+                }
+            }
+        };
+
+        var analysis = options.Analyze();
+
+        Assert.Contains(
+            analysis.Warnings,
+            issue => issue.Message.Contains("Parser Layout is empty", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void AddJLogDashboard_BindsOptionsFromConfigurationSection()
     {
         var values = new Dictionary<string, string?>
@@ -118,6 +185,12 @@ public sealed class OptionsAndUtilityTests
             ["JLogDashboard:Projects:0:Name"] = "orders",
             ["JLogDashboard:Projects:0:DirectoryPath"] = "C:\\logs\\orders",
             ["JLogDashboard:Projects:0:Provider"] = "serilog",
+            ["JLogDashboard:Projects:0:Parser:Mode"] = "delimited",
+            ["JLogDashboard:Projects:0:Parser:Delimiter"] = "||",
+            ["JLogDashboard:Projects:0:Parser:Layout"] = "${longdate}|${level}|${logger}|${message}",
+            ["JLogDashboard:Projects:0:Parser:TimestampIndex"] = "0",
+            ["JLogDashboard:Projects:0:Parser:LevelIndex"] = "2",
+            ["JLogDashboard:Projects:0:Parser:MessageIndex"] = "3",
             ["JLogDashboard:Projects:1:Name"] = "billing",
             ["JLogDashboard:Projects:1:DirectoryPath"] = "C:\\logs\\billing",
             ["JLogDashboard:Projects:1:Provider"] = "nlog"
@@ -132,24 +205,10 @@ public sealed class OptionsAndUtilityTests
         Assert.True(options.BasicAuth.Enabled);
         Assert.Equal("admin", options.BasicAuth.Username);
         Assert.Equal(new[] { "orders", "billing" }, options.Projects.Select(project => project.Name).ToArray());
-    }
-
-    [Fact]
-    public void Generate_ProducesCopyReadyNginxReverseProxyConfig()
-    {
-        var generator = new NginxConfigGenerator();
-
-        var config = generator.Generate(new NginxConfigRequest
-        {
-            ServerName = "logs.example.com",
-            UpstreamUrl = "http://127.0.0.1:5088",
-            BasePath = "/jlog"
-        });
-
-        Assert.Contains("server_name logs.example.com;", config);
-        Assert.Contains("location /jlog/", config);
-        Assert.Contains("proxy_pass http://127.0.0.1:5088;", config);
-        Assert.Contains("X-Forwarded-Proto", config);
+        Assert.Equal("delimited", options.Projects[0].Parser.Mode);
+        Assert.Equal("||", options.Projects[0].Parser.Delimiter);
+        Assert.Equal("${longdate}|${level}|${logger}|${message}", options.Projects[0].Parser.Layout);
+        Assert.Equal(2, options.Projects[0].Parser.LevelIndex);
     }
 
     [Fact]
@@ -168,5 +227,24 @@ public sealed class OptionsAndUtilityTests
         var projectPath = Path.Combine(repositoryRoot, "samples", "JLogDashboard.SampleWeb", "JLogDashboard.SampleWeb.csproj");
 
         Assert.True(File.Exists(projectPath));
+    }
+
+    private sealed class TemporaryDirectory : IDisposable
+    {
+        public TemporaryDirectory()
+        {
+            Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "jlog-options-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(Path);
+        }
+
+        public string Path { get; }
+
+        public void Dispose()
+        {
+            if (Directory.Exists(Path))
+            {
+                Directory.Delete(Path, recursive: true);
+            }
+        }
     }
 }

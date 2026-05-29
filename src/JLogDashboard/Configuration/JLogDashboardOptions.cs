@@ -6,6 +6,7 @@ namespace JLogDashboard.Configuration;
 public sealed class JLogDashboardOptions
 {
     private static readonly string[] SupportedProviders = ["auto", "serilog", "nlog", "log4net"];
+    private static readonly string[] SupportedParserModes = ["auto", "delimited", "regex", "nlog-layout", "log4net-pattern", "serilog-template"];
 
     /// <summary>The URL prefix used for the Dashboard and its APIs.</summary>
     public string RoutePrefix { get; set; } = "/jlog";
@@ -143,6 +144,40 @@ public sealed class JLogDashboardOptions
             if (string.IsNullOrWhiteSpace(project.FileSearchPattern))
             {
                 issues.Add(Warning($"Project '{project.Name}' FileSearchPattern is empty. JLogDashboard will fall back to '*.log'."));
+            }
+
+            var parserMode = string.IsNullOrWhiteSpace(project.Parser.Mode)
+                ? "auto"
+                : project.Parser.Mode.Trim();
+            if (!SupportedParserModes.Contains(parserMode, StringComparer.OrdinalIgnoreCase))
+            {
+                issues.Add(Warning(
+                    $"Project '{project.Name}' Parser Mode '{project.Parser.Mode}' is not supported. JLogDashboard will fall back to built-in parsing."));
+            }
+            else if (string.Equals(parserMode, "delimited", StringComparison.OrdinalIgnoreCase)
+                     && string.IsNullOrEmpty(project.Parser.Delimiter))
+            {
+                issues.Add(Warning($"Project '{project.Name}' Parser Delimiter is empty. JLogDashboard will use '|'."));
+            }
+            else if (string.Equals(parserMode, "regex", StringComparison.OrdinalIgnoreCase)
+                     && string.IsNullOrWhiteSpace(project.Parser.Pattern))
+            {
+                issues.Add(Warning($"Project '{project.Name}' Parser Pattern is empty. JLogDashboard will fall back to built-in parsing."));
+            }
+            else if (string.Equals(parserMode, "nlog-layout", StringComparison.OrdinalIgnoreCase)
+                     && string.IsNullOrWhiteSpace(project.Parser.Layout))
+            {
+                issues.Add(Warning($"Project '{project.Name}' Parser Layout is empty. JLogDashboard will fall back to built-in parsing."));
+            }
+            else if (string.Equals(parserMode, "log4net-pattern", StringComparison.OrdinalIgnoreCase)
+                     && string.IsNullOrWhiteSpace(project.Parser.Layout))
+            {
+                issues.Add(Warning($"Project '{project.Name}' Parser Layout is empty. JLogDashboard will fall back to built-in parsing."));
+            }
+            else if (string.Equals(parserMode, "serilog-template", StringComparison.OrdinalIgnoreCase)
+                     && string.IsNullOrWhiteSpace(project.Parser.Layout))
+            {
+                issues.Add(Warning($"Project '{project.Name}' Parser Layout is empty. JLogDashboard will fall back to built-in parsing."));
             }
         }
 

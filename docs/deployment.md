@@ -101,27 +101,11 @@ Resulting address example:
 http://your-host:5099/ops-logs
 ```
 
-## Reverse Proxy With nginx
+## Reverse Proxy And HTTPS
 
-Recommended when the dashboard should be reachable through a friendly domain or path:
+JLogDashboard is mounted in the ASP.NET Core host by `RoutePrefix`; reverse-proxy configuration belongs to your infrastructure rather than the Dashboard UI. When the dashboard is reachable through a public or shared network, use HTTPS, VPN, or a trusted internal proxy.
 
-```nginx
-server {
-    listen 80;
-    server_name logs.example.com;
-
-    location /jlog/ {
-        proxy_pass http://127.0.0.1:5088;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-}
-```
+If you use the built-in Basic Auth lockout mechanism behind a reverse proxy, preserve `X-Forwarded-For` so repeated failed attempts are counted against the actual client instead of the proxy address.
 
 ## Production Checklist
 

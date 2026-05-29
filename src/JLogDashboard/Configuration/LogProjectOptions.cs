@@ -1,3 +1,5 @@
+using JLogDashboard.Parsing;
+
 namespace JLogDashboard.Configuration;
 
 /// <summary>
@@ -19,4 +21,7 @@ public sealed class LogProjectOptions
 
     /// <summary>Whether subdirectories should be scanned.</summary>
     public bool Recursive { get; set; }
+
+    /// <summary>Optional parsing rules for custom log layouts such as NLog layout, log4net PatternLayout, Serilog outputTemplate, delimiter-separated, or regex-based text logs.</summary>
+    public LogParserOptions Parser { get; set; } = new();
 }

@@ -101,27 +101,11 @@ ASPNETCORE_URLS=http://0.0.0.0:5099
 http://your-host:5099/ops-logs
 ```
 
-## 通过 nginx 反向代理
+## 反向代理与 HTTPS
 
-当需要友好的域名或统一入口时，推荐放在 nginx 后面：
+JLogDashboard 通过 ASP.NET Core 宿主应用中的 `RoutePrefix` 挂载；反向代理配置属于基础设施层，不属于 Dashboard UI 的职责。若 Dashboard 可能被公网或共享网络访问，应配合 HTTPS、VPN 或可信内网代理使用。
 
-```nginx
-server {
-    listen 80;
-    server_name logs.example.com;
-
-    location /jlog/ {
-        proxy_pass http://127.0.0.1:5088;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-}
-```
+如果在反向代理之后使用内置 Basic Auth 失败锁定机制，需要保留 `X-Forwarded-For`，这样重复失败尝试会按真实客户端而不是代理地址计数。
 
 ## 生产环境检查清单
 

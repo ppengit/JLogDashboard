@@ -26,7 +26,7 @@ Yes. Configure multiple projects under `JLogDashboard:Projects`, each pointing t
 
 ## Can I run it on a separate port?
 
-Yes. The repository includes `src/JLogDashboard.Host` for standalone hosting, and the Dashboard UI also includes nginx configuration assistance.
+Yes. Embed it in an existing ASP.NET Core application and control the application's bind address as usual, or run the included `src/JLogDashboard.Host` standalone host on a dedicated port. Reverse proxy and HTTPS settings should stay in your host or infrastructure configuration rather than in the Dashboard UI.
 
 ## How do I change the port or URL path?
 

@@ -6,6 +6,10 @@
 # dotenv files
 .env
 
+# Local JLogDashboard verification data
+tmp/
+samples/JLogDashboard.SampleWeb/appsettings.Development.json
+
 # User-specific files
 *.rsuser
 *.suo
