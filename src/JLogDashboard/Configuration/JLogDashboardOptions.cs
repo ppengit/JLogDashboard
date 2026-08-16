@@ -1,3 +1,5 @@
+using JLogDashboard.Parsing;
+
 namespace JLogDashboard.Configuration;
 
 /// <summary>
@@ -33,6 +35,7 @@ public sealed class JLogDashboardOptions
     public JLogDashboardConfigurationAnalysis Analyze()
     {
         var issues = new List<JLogDashboardConfigurationIssue>();
+        var basicAuth = BasicAuth ?? new BasicAuthOptions();
 
         if (DefaultPageSize <= 0)
         {
@@ -60,47 +63,47 @@ public sealed class JLogDashboardOptions
             issues.Add(Warning($"Culture '{Culture}' is not built in. JLogDashboard will fall back to English text resources."));
         }
 
-        if (BasicAuth.Enabled)
+        if (basicAuth.Enabled)
         {
-            if (string.IsNullOrWhiteSpace(BasicAuth.Username))
+            if (string.IsNullOrWhiteSpace(basicAuth.Username))
             {
                 issues.Add(Error("BasicAuth Username is required when BasicAuth is enabled."));
             }
 
-            if (string.IsNullOrWhiteSpace(BasicAuth.Password)
-                && string.IsNullOrWhiteSpace(BasicAuth.PasswordSha256))
+            if (string.IsNullOrWhiteSpace(basicAuth.Password)
+                && string.IsNullOrWhiteSpace(basicAuth.PasswordSha256))
             {
                 issues.Add(Error("BasicAuth Password or PasswordSha256 is required when BasicAuth is enabled."));
             }
 
-            if (!string.IsNullOrWhiteSpace(BasicAuth.Password)
-                && !string.IsNullOrWhiteSpace(BasicAuth.PasswordSha256))
+            if (!string.IsNullOrWhiteSpace(basicAuth.Password)
+                && !string.IsNullOrWhiteSpace(basicAuth.PasswordSha256))
             {
                 issues.Add(Warning("BasicAuth Password and PasswordSha256 are both configured. PasswordSha256 will take precedence."));
             }
 
-            if (string.Equals(BasicAuth.Password, "change-me", StringComparison.Ordinal))
+            if (string.Equals(basicAuth.Password, "change-me", StringComparison.Ordinal))
             {
                 issues.Add(Warning("BasicAuth Password uses the default value 'change-me'. Change it before exposing the Dashboard."));
             }
 
-            if (!string.IsNullOrWhiteSpace(BasicAuth.Password))
+            if (!string.IsNullOrWhiteSpace(basicAuth.Password))
             {
                 issues.Add(Warning("BasicAuth Password is stored in plain text. Prefer PasswordSha256 in shared or production environments."));
             }
 
-            if (!string.IsNullOrWhiteSpace(BasicAuth.PasswordSha256)
-                && !BasicAuth.IsPasswordSha256Hex())
+            if (!string.IsNullOrWhiteSpace(basicAuth.PasswordSha256)
+                && !basicAuth.IsPasswordSha256Hex())
             {
                 issues.Add(Error("BasicAuth PasswordSha256 must be a 64-character hexadecimal SHA-256 string."));
             }
 
-            if (BasicAuth.MaxFailedAttempts <= 0)
+            if (basicAuth.MaxFailedAttempts <= 0)
             {
                 issues.Add(Error("BasicAuth MaxFailedAttempts must be greater than 0."));
             }
 
-            if (BasicAuth.LockoutSeconds <= 0)
+            if (basicAuth.LockoutSeconds <= 0)
             {
                 issues.Add(Error("BasicAuth LockoutSeconds must be greater than 0."));
             }
@@ -117,6 +120,12 @@ public sealed class JLogDashboardOptions
 
         foreach (var project in Projects)
         {
+            if (project is null)
+            {
+                issues.Add(Error("A log project entry is null."));
+                continue;
+            }
+
             if (string.IsNullOrWhiteSpace(project.Name))
             {
                 issues.Add(Error("Project Name is required."));
@@ -146,43 +155,44 @@ public sealed class JLogDashboardOptions
                 issues.Add(Warning($"Project '{project.Name}' FileSearchPattern is empty. JLogDashboard will fall back to '*.log'."));
             }
 
-            var parserMode = string.IsNullOrWhiteSpace(project.Parser.Mode)
+            var parser = project.Parser ?? new LogParserOptions();
+            var parserMode = string.IsNullOrWhiteSpace(parser.Mode)
                 ? "auto"
-                : project.Parser.Mode.Trim();
+                : parser.Mode.Trim();
             if (!SupportedParserModes.Contains(parserMode, StringComparer.OrdinalIgnoreCase))
             {
                 issues.Add(Warning(
-                    $"Project '{project.Name}' Parser Mode '{project.Parser.Mode}' is not supported. JLogDashboard will fall back to built-in parsing."));
+                    $"Project '{project.Name}' Parser Mode '{parser.Mode}' is not supported. JLogDashboard will fall back to built-in parsing."));
             }
             else if (string.Equals(parserMode, "delimited", StringComparison.OrdinalIgnoreCase)
-                     && string.IsNullOrEmpty(project.Parser.Delimiter))
+                     && string.IsNullOrEmpty(parser.Delimiter))
             {
                 issues.Add(Warning($"Project '{project.Name}' Parser Delimiter is empty. JLogDashboard will use '|'."));
             }
             else if (string.Equals(parserMode, "regex", StringComparison.OrdinalIgnoreCase)
-                     && string.IsNullOrWhiteSpace(project.Parser.Pattern))
+                     && string.IsNullOrWhiteSpace(parser.Pattern))
             {
                 issues.Add(Warning($"Project '{project.Name}' Parser Pattern is empty. JLogDashboard will fall back to built-in parsing."));
             }
             else if (string.Equals(parserMode, "nlog-layout", StringComparison.OrdinalIgnoreCase)
-                     && string.IsNullOrWhiteSpace(project.Parser.Layout))
+                     && string.IsNullOrWhiteSpace(parser.Layout))
             {
                 issues.Add(Warning($"Project '{project.Name}' Parser Layout is empty. JLogDashboard will fall back to built-in parsing."));
             }
             else if (string.Equals(parserMode, "log4net-pattern", StringComparison.OrdinalIgnoreCase)
-                     && string.IsNullOrWhiteSpace(project.Parser.Layout))
+                     && string.IsNullOrWhiteSpace(parser.Layout))
             {
                 issues.Add(Warning($"Project '{project.Name}' Parser Layout is empty. JLogDashboard will fall back to built-in parsing."));
             }
             else if (string.Equals(parserMode, "serilog-template", StringComparison.OrdinalIgnoreCase)
-                     && string.IsNullOrWhiteSpace(project.Parser.Layout))
+                     && string.IsNullOrWhiteSpace(parser.Layout))
             {
                 issues.Add(Warning($"Project '{project.Name}' Parser Layout is empty. JLogDashboard will fall back to built-in parsing."));
             }
         }
 
         foreach (var duplicate in Projects
-                     .Where(project => !string.IsNullOrWhiteSpace(project.Name))
+                     .Where(project => project is not null && !string.IsNullOrWhiteSpace(project.Name))
                      .GroupBy(project => project.Name, StringComparer.OrdinalIgnoreCase)
                      .Where(group => group.Count() > 1)
                      .Select(group => group.Key))

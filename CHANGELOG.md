@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.0
+
+- Hardened dashboard fault isolation so the fault-isolation endpoint filter is the outermost guard, containing configuration, authentication, model-binding, and handler failures.
+- Preserved correct 400 responses for malformed search requests instead of converting client errors into 503 responses.
+- Hardened configuration analysis so null BasicAuth, parser, and project entries no longer throw during host startup; a null project entry is reported as a configuration error.
+- Hardened the Basic Auth guard so a null BasicAuth configuration is treated as disabled instead of failing every Dashboard request.
+- Hardened startup diagnostics so logging failures cannot prevent the host application from starting.
+
 ## 0.1.8
 
 - Added project-level parser configuration for common NLog layout strings, log4net PatternLayout strings, Serilog outputTemplate strings, custom delimited logs, and regex-based plain-text log layouts.

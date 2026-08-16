@@ -193,6 +193,18 @@ public sealed class AspNetCoreDashboardTests
     }
 
     [Fact]
+    public async Task SearchEndpoint_MalformedJsonBody_ReturnsBadRequestNotServiceUnavailable()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(workspace);
+
+        using var content = new StringContent("{ this is not valid json", Encoding.UTF8, "application/json");
+        var response = await client.PostAsync("/ops-logs/api/search", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task NginxEndpoint_IsNotMapped()
     {
         using var workspace = new TemporaryLogWorkspace();
@@ -247,6 +259,18 @@ public sealed class AspNetCoreDashboardTests
             options.BasicAuth.Password = "secret";
         });
         client.DefaultRequestHeaders.Authorization = CreateBasicAuthHeader("ops", "secret");
+
+        var response = await client.GetAsync("/ops-logs");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("JLogDashboard", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task BasicAuth_WhenNull_AllowsDashboardRequests()
+    {
+        using var workspace = new TemporaryLogWorkspace();
+        var client = CreateClient(workspace, options => options.BasicAuth = null!);
 
         var response = await client.GetAsync("/ops-logs");
 

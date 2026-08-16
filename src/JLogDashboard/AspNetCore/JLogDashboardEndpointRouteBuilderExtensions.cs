@@ -32,8 +32,11 @@ public static class JLogDashboardEndpointRouteBuilderExtensions
         var routePrefix = NormalizeRoutePrefix(options.RoutePrefix);
 
         var group = endpoints.MapGroup(routePrefix);
-        group.AddEndpointFilter<JLogDashboardConfigurationEndpointFilter>();
+        // Endpoint filters run in registration order (first-registered is outermost).
+        // Register fault isolation first so configuration, authentication, model binding,
+        // and handler failures are all contained within the Dashboard route.
         group.AddEndpointFilter<JLogDashboardFaultIsolationEndpointFilter>();
+        group.AddEndpointFilter<JLogDashboardConfigurationEndpointFilter>();
         group.AddEndpointFilter<JLogDashboardBasicAuthEndpointFilter>();
 
         group.MapGet(string.Empty, (HttpContext context) =>

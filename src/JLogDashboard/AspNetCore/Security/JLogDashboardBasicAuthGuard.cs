@@ -25,7 +25,7 @@ internal sealed class JLogDashboardBasicAuthGuard
 
     public BasicAuthDecision Authenticate(HttpContext context, JLogDashboardOptions options)
     {
-        if (!options.BasicAuth.Enabled)
+        if (options.BasicAuth is null || !options.BasicAuth.Enabled)
         {
             return BasicAuthDecision.Allow;
         }

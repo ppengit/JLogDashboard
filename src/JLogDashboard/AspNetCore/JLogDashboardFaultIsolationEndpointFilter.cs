@@ -22,6 +22,11 @@ internal sealed class JLogDashboardFaultIsolationEndpointFilter : IEndpointFilte
         {
             throw;
         }
+        catch (BadHttpRequestException)
+        {
+            // Malformed requests are expected client errors (400), not Dashboard faults.
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(

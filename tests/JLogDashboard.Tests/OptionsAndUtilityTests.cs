@@ -174,6 +174,26 @@ public sealed class OptionsAndUtilityTests
     }
 
     [Fact]
+    public void Analyze_DoesNotThrowWhenConfigurationContainsNullEntries()
+    {
+        var options = new JLogDashboardOptions
+        {
+            BasicAuth = null!,
+        };
+        options.Projects.Add(null!);
+        options.Projects.Add(new LogProjectOptions
+        {
+            Name = "orders",
+            DirectoryPath = "C:\\logs\\orders",
+            Parser = null!
+        });
+
+        var analysis = options.Analyze();
+
+        Assert.Contains(analysis.Errors, issue => issue.Message.Contains("null", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void AddJLogDashboard_BindsOptionsFromConfigurationSection()
     {
         var values = new Dictionary<string, string?>

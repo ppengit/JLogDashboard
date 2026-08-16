@@ -9,6 +9,7 @@
 # Local JLogDashboard verification data
 tmp/
 samples/JLogDashboard.SampleWeb/appsettings.Development.json
+dsh-session-session-*.zip
 
 # User-specific files
 *.rsuser

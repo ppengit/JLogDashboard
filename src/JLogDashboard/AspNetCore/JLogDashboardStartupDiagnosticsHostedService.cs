@@ -19,14 +19,22 @@ internal sealed class JLogDashboardStartupDiagnosticsHostedService : IHostedServ
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        foreach (var issue in _state.Analysis.Errors)
+        try
         {
-            _logger.LogError("JLogDashboard configuration error: {Message}", issue.Message);
-        }
+            foreach (var issue in _state.Analysis.Errors)
+            {
+                _logger.LogError("JLogDashboard configuration error: {Message}", issue.Message);
+            }
 
-        foreach (var issue in _state.Analysis.Warnings)
+            foreach (var issue in _state.Analysis.Warnings)
+            {
+                _logger.LogWarning("JLogDashboard configuration warning: {Message}", issue.Message);
+            }
+        }
+        catch (Exception)
         {
-            _logger.LogWarning("JLogDashboard configuration warning: {Message}", issue.Message);
+            // Startup diagnostics must never prevent the host application from starting.
+            // Logging itself may be unavailable here, so intentionally swallow.
         }
 
         return Task.CompletedTask;
